@@ -9,7 +9,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="VSG Vihar">
-  <link rel="apple-touch-icon" href="https://emojicdn.elk.sh/🛕">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -30,81 +29,26 @@
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const {useState, useEffect, useCallback} = React;
+const {useState, useEffect} = React;
 
-// ─── Constants ────────────────────────────────────────────────
-const LS_ENTRIES = 'vsg-entries-v4';
+const LS_ENTRIES = 'vsg-entries-v5';
 const LS_SCRIPT  = 'vsg-script-url';
-const MONTHS     = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 const C = {
   bg:'#FFFDF5', primary:'#C96800', h1:'#D4720A', h2:'#A85000',
   dark:'#3D1F00', muted:'#8B6525', card:'#FFFFFF',
   border:'#E8C97A', bl:'#F5E5B0', green:'#1B7A3A', red:'#B71C1C',
+  purple:'#7B2D8B',
 };
 
-// ─── Helpers ──────────────────────────────────────────────────
-function fmt12(t){
-  if(!t)return'';
-  const[h,m]=t.split(':').map(Number);
-  return`${String(h%12||12).padStart(2,'0')}:${String(m).padStart(2,'0')} ${h>=12?'pm':'am'}`;
-}
-function fmtDate(d){
-  if(!d)return'';
-  const[y,mo,dd]=d.split('-');
-  return`${dd}/${mo}/${y}`;
-}
-function today(){return new Date().toISOString().split('T')[0];}
-
-function thanaStr(sv,sj){
-  const a=+sv||0,b=+sj||0;
-  if(a&&b)return`${a} Sadhavijee + ${b} Sadhujee M.Sa.`;
-  if(a)return`${a} Sadhavijee M.Sa.`;
-  if(b)return`${b} Sadhujee M.Sa.`;
-  return'';
-}
-
-function makeMsg(e){
-  const wLines=(e.walkers||[]).filter(Boolean).map(w=>`🚶${w}`).join('\n');
-  const vLines=(e.vehicleSevak||[]).filter(Boolean).map(v=>`🛵 ${v}`).join('\n');
-  const wcLines=(e.wheelchairSevak||[]).filter(Boolean).map(w=>`♿ ${w}`).join('\n');
-  const sevak=[wLines,vLines,wcLines].filter(Boolean).join('\n');
-  return`🚶🏻‍♂️*VSG GANDHINAGAR*🚶🏻\n*🔢 VIHAR NO.-* ${e.viharNo}\n \n📅 *DATE:* ${fmtDate(e.date)}\n⏰ *TIME:* ${fmt12(e.timeFrom)} to ${fmt12(e.timeTo)}\n \n🙏🏻 *THANA:* ${thanaStr(e.thanaSadhavijee,e.thanaSadhujee)}\n🛣 *K.M.:* ${e.km} K.M.\n \n*🏫 VIHAR DHAM*\n🛕 *From :* ${e.fromDerasar}\n🛕 *To :*  ${e.toDerasar}\n \n*🙋 VIHAR SEVAK*\n${sevak}\n \n*🌸 विहार सेवा🙏🏻अनमोल सेवा*`;
-}
-
-function blankForm(lastNo=103){
-  return{viharNo:lastNo+1,date:today(),timeFrom:'04:45',timeTo:'07:45',
-    thanaSadhavijee:'',thanaSadhujee:'',km:'',fromDerasar:'',toDerasar:''};
-}
-
-// ─── Google Sheets Sync ───────────────────────────────────────
-async function syncToSheet(scriptUrl, action, payload){
-  if(!scriptUrl)return;
-  try{
-    let url=`${scriptUrl}?action=${action}`;
-    if(action==='save')url+=`&data=${encodeURIComponent(JSON.stringify(payload))}`;
-    if(action==='delete')url+=`&id=${payload}`;
-    await fetch(url,{redirect:'follow'});
-  }catch(e){/* silent fail – local data is safe */}
-}
-
-async function pullFromSheet(scriptUrl){
-  if(!scriptUrl)return null;
-  try{
-    const r=await fetch(`${scriptUrl}?action=getAll`,{redirect:'follow'});
-    const j=await r.json();
-    if(j.success&&Array.isArray(j.entries))return j.entries;
-  }catch(e){}
-  return null;
-}
-
-// ─── Styles ───────────────────────────────────────────────────
+// Module-level styles (so ListInput can reference without being inside App)
 const S={
   app:{fontFamily:"'Nunito',sans-serif",background:C.bg,height:'100vh',display:'flex',flexDirection:'column',maxWidth:480,margin:'0 auto',overflow:'hidden'},
   hdr:{background:`linear-gradient(135deg,${C.h1},${C.h2})`,color:'#fff',padding:'12px 16px 10px',flexShrink:0,boxShadow:'0 2px 12px #00000030'},
   scr:{flex:1,overflowY:'auto',padding:'12px 14px 20px'},
   card:{background:C.card,borderRadius:14,border:`1px solid ${C.border}`,marginBottom:10,overflow:'hidden'},
   cHead:{padding:'9px 14px',borderBottom:`1px solid ${C.bl}`,display:'flex',alignItems:'center',gap:6,fontSize:13,fontWeight:700,color:C.primary,background:'#FFFBF0'},
+  cHeadF:{padding:'9px 14px',borderBottom:`1px solid #E8D0F5`,display:'flex',alignItems:'center',gap:6,fontSize:13,fontWeight:700,color:'#7B2D8B',background:'#FAF0FF'},
   fp:{padding:'11px 14px'},
   lbl:{fontSize:10,fontWeight:800,color:C.muted,textTransform:'uppercase',letterSpacing:0.6,marginBottom:4,display:'block'},
   inp:{width:'100%',padding:'9px 11px',border:`1.5px solid ${C.border}`,borderRadius:9,fontSize:14,color:C.dark,background:C.bg,transition:'border-color 0.15s'},
@@ -114,68 +58,166 @@ const S={
   bWa:{background:'#25D366',color:'#fff',fontWeight:800},
   bOut:{background:'transparent',color:C.primary,border:`1.5px solid ${C.primary}`},
   bGh:{background:'#F5F0E8',color:'#666'},
-  bDel:{background:'#FFEBEE',color:C.red,border:'1px solid #FFCDD2'},
+  bDel:{background:'#FFEBEE',color:'#B71C1C',border:'1px solid #FFCDD2'},
+  bDanger:{background:'#B71C1C',color:'#fff',border:'none'},
   nav:{background:'#fff',borderTop:`1px solid ${C.border}`,display:'flex',flexShrink:0},
   nBtn:{flex:1,padding:'9px 4px 7px',border:'none',background:'transparent',cursor:'pointer',display:'flex',flexDirection:'column',alignItems:'center',gap:2,transition:'color 0.15s'},
 };
 
-// ─── Main App ─────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────
+function fmt12(t){
+  if(!t)return'';
+  const[h,m]=t.split(':').map(Number);
+  return`${String(h%12||12).padStart(2,'0')}:${String(m).padStart(2,'0')} ${h>=12?'pm':'am'}`;
+}
+function fmtDate(d){
+  if(!d)return'';
+  const p=d.split('-');
+  return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d;
+}
+function today(){return new Date().toISOString().split('T')[0];}
+
+function thanaStr(sv,sj){
+  const a=+sv||0,b=+sj||0;
+  if(a&&b)return`${a} Sadhviji Bhagvant + ${b} Sadhu Bhagvant M.Sa.`;
+  if(a)return`${a} Sadhviji Bhagvant M.Sa.`;
+  if(b)return`${b} Sadhu Bhagvant M.Sa.`;
+  return'';
+}
+
+function makeMsg(e){
+  const wLines =(e.sevak        ||[]).filter(Boolean).map(w=>`🚶${w}`).join('\n');
+  const vLines =(e.vehicleSevak ||[]).filter(Boolean).map(v=>`🛵 ${v}`).join('\n');
+  const wiLines=(e.sevika       ||[]).filter(Boolean).map(w=>`🚶‍♀️${w}`).join('\n');
+  const viLines=(e.vehicleSevika||[]).filter(Boolean).map(v=>`🛵 ${v}`).join('\n');
+  const sevakBlk =[wLines,vLines].filter(Boolean).join('\n');
+  const sevikaBlk=[wiLines,viLines].filter(Boolean).join('\n');
+  let msg=`🚶🏻‍♂️*VSG GANDHINAGAR*🚶🏻\n*🔢 VIHAR NO.-* ${e.viharNo}\n \n📅 *DATE:* ${fmtDate(e.date)}\n⏰ *TIME:* ${fmt12(e.timeFrom)} to ${fmt12(e.timeTo)}\n \n🙏🏻 *THANA:* ${thanaStr(e.thanaSadhavijee,e.thanaSadhujee)}\n🛣 *K.M.:* ${e.km} K.M.\n \n*🏫 VIHAR DHAM*\n🛕 *From :* ${e.fromDerasar}\n🛕 *To :*  ${e.toDerasar}`;
+  if(sevakBlk) msg+=`\n \n*🙋 VIHAR SEVAK*\n${sevakBlk}`;
+  if(sevikaBlk)msg+=`\n \n*🙋‍♀️ VIHAR SEVIKA*\n${sevikaBlk}`;
+  msg+=`\n \n*🌸 विहार सेवा🙏🏻अनमोल सेवा*`;
+  return msg;
+}
+
+function blankForm(lastNo=0){
+  return{viharNo:lastNo+1,date:today(),timeFrom:'04:45',timeTo:'07:45',
+    thanaSadhavijee:'',thanaSadhujee:'',km:'',fromDerasar:'',toDerasar:''};
+}
+
+// ── Google Sheets sync ────────────────────────────────────────
+async function syncToSheet(url,action,payload){
+  if(!url)return;
+  try{
+    let u=`${url}?action=${action}`;
+    if(action==='save')   u+=`&data=${encodeURIComponent(JSON.stringify(payload))}`;
+    if(action==='delete') u+=`&id=${payload}`;
+    if(action==='newYear')u+=`&year=${payload}`;
+    await fetch(u,{redirect:'follow'});
+  }catch(e){}
+}
+async function pullFromSheet(url){
+  if(!url)return null;
+  try{
+    const r=await fetch(`${url}?action=getAll`,{redirect:'follow'});
+    const j=await r.json();
+    if(j.success&&Array.isArray(j.entries))return j.entries;
+  }catch(e){}
+  return null;
+}
+
+// ── ListInput — defined OUTSIDE App (fixes mobile keyboard bug) ─
+function ListInput({items,setItems,label,icon,accentColor}){
+  const ac=accentColor||C.primary;
+  return(
+    <div style={{marginTop:12}}>
+      <label style={S.lbl}>{icon} {label}</label>
+      {items.map((v,i)=>(
+        <div key={i} style={{display:'flex',gap:6,marginBottom:7}}>
+          <input
+            style={{...S.inp,flex:1,borderColor:ac+'88'}}
+            type="text"
+            value={v}
+            placeholder={label}
+            onChange={ev=>setItems(a=>a.map((x,j)=>j===i?ev.target.value:x))}
+          />
+          {items.length>1&&(
+            <button style={{...S.btn,...S.bDel,padding:'9px 12px',minWidth:38}}
+              onClick={()=>setItems(a=>a.filter((_,j)=>j!==i))}>✕</button>
+          )}
+        </div>
+      ))}
+      <button style={{...S.btn,width:'100%',padding:'8px',fontSize:13,background:'transparent',
+        color:ac,border:`1.5px solid ${ac}`,borderRadius:10,cursor:'pointer',fontWeight:700}}
+        onClick={()=>setItems(a=>[...a,''])}>
+        + Add {label}
+      </button>
+    </div>
+  );
+}
+
+function Medal({rank}){
+  const bg=rank===0?'#FFD700':rank===1?'#C0C0C0':rank===2?'#CD7F32':C.border;
+  return(
+    <div style={{width:28,height:28,borderRadius:'50%',background:bg,display:'flex',
+      alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:900,
+      color:rank<3?'#5C3D00':C.dark,flexShrink:0}}>{rank+1}</div>
+  );
+}
+
+// ── Main App ─────────────────────────────────────────────────
 function App(){
-  const[tab,setTab]=useState('new');
-  const[entries,setEntries]=useState([]);
-  const[form,setForm]=useState(blankForm(103));
-  const[walkers,setWalkers]=useState(['','']);
-  const[vehicles,setVehicles]=useState(['']);
-  const[wheelchairs,setWheelchairs]=useState(['']);
-  const[preview,setPreview]=useState(false);
-  const[copied,setCopied]=useState(null);
-  const[editId,setEditId]=useState(null);
-  const[loading,setLoading]=useState(true);
-  const[syncing,setSyncing]=useState(false);
-  const[toast,setToast]=useState(null);
-  const[expanded,setExpanded]=useState(null);
+  const[tab,setTab]             =useState('new');
+  const[entries,setEntries]     =useState([]);
+  const[form,setForm]           =useState(blankForm(0));
+  const[sevak,setSevak]         =useState(['']);
+  const[vehicleSevak,setVehSevak]=useState(['']);
+  const[sevika,setSevika]       =useState(['']);
+  const[vehicleSevika,setVehSevika]=useState(['']);
+  const[preview,setPreview]     =useState(false);
+  const[copied,setCopied]       =useState(null);
+  const[editId,setEditId]       =useState(null);
+  const[loading,setLoading]     =useState(true);
+  const[syncing,setSyncing]     =useState(false);
+  const[toast,setToast]         =useState(null);
+  const[expanded,setExpanded]   =useState(null);
   const[delConfirm,setDelConfirm]=useState(null);
-  const[showSetup,setShowSetup]=useState(false);
-  const[scriptUrl,setScriptUrl]=useState('');
+  const[showSetup,setShowSetup] =useState(false);
+  const[scriptUrl,setScriptUrl] =useState('');
   const[scriptInput,setScriptInput]=useState('');
+  const[yearConfirm,setYearConfirm]=useState(false);
 
   useEffect(()=>{init();},[]);
 
   async function init(){
     const url=localStorage.getItem(LS_SCRIPT)||'';
-    setScriptUrl(url);
-    setScriptInput(url);
+    setScriptUrl(url);setScriptInput(url);
     const local=JSON.parse(localStorage.getItem(LS_ENTRIES)||'[]');
-
     if(url){
       setSyncing(true);
       const remote=await pullFromSheet(url);
       setSyncing(false);
       if(remote&&remote.length>0){
-        // Merge: remote is source of truth, local fills gaps
-        const merged=mergeEntries(local,remote);
-        persist(merged,false);
-        setLoading(false);
-        return;
+        const merged=merge(local,remote);
+        apply(merged);setLoading(false);return;
       }
     }
-    const maxNo=local.length?Math.max(...local.map(e=>+e.viharNo||0)):103;
-    setEntries(local);
-    setForm(blankForm(maxNo));
-    setLoading(false);
+    apply(local);setLoading(false);
   }
 
-  function mergeEntries(local,remote){
-    const map={};
-    [...local,...remote].forEach(e=>{map[e.id]=e;});
-    return Object.values(map).sort((a,b)=>b.viharNo-a.viharNo);
+  function merge(a,b){
+    const m={};[...a,...b].forEach(e=>{m[e.id]=e;});
+    return Object.values(m).sort((x,y)=>+y.viharNo-+x.viharNo);
   }
 
-  function persist(data,sync=true){
-    localStorage.setItem(LS_ENTRIES,JSON.stringify(data));
+  function apply(data){
+    const mx=data.length?Math.max(...data.map(e=>+e.viharNo||0)):0;
     setEntries(data);
-    const maxNo=data.length?Math.max(...data.map(e=>+e.viharNo)):103;
-    setForm(f=>({...f,viharNo:maxNo+1}));
+    setForm(f=>({...f,viharNo:mx+1}));
+  }
+
+  function save(data){
+    localStorage.setItem(LS_ENTRIES,JSON.stringify(data));
+    apply(data);
   }
 
   function toast_(msg,type='ok'){setToast({msg,type});setTimeout(()=>setToast(null),2600);}
@@ -186,31 +228,30 @@ function App(){
     if(!form.date||!form.timeFrom||!form.timeTo||(sv===0&&sj===0)||!form.km||!form.fromDerasar||!form.toDerasar){
       toast_('Please fill all required fields ⚠️','err');return;
     }
-    if(!walkers.filter(Boolean).length&&!vehicles.filter(Boolean).length&&!wheelchairs.filter(Boolean).length){
-      toast_('Add at least one Sevak name','err');return;
+    if(![...sevak,...vehicleSevak,...sevika,...vehicleSevika].filter(Boolean).length){
+      toast_('Add at least one Sevak or Sevika name','err');return;
     }
     const entry={
       id:editId||Date.now()+'',
-      ...form,
-      viharNo:+form.viharNo,km:+form.km,
+      ...form,viharNo:+form.viharNo,km:+form.km,
       thanaSadhavijee:sv,thanaSadhujee:sj,
-      walkers:walkers.filter(Boolean),
-      vehicleSevak:vehicles.filter(Boolean),
-      wheelchairSevak:wheelchairs.filter(Boolean),
+      sevak:sevak.filter(Boolean),
+      vehicleSevak:vehicleSevak.filter(Boolean),
+      sevika:sevika.filter(Boolean),
+      vehicleSevika:vehicleSevika.filter(Boolean),
       savedAt:new Date().toISOString(),
     };
     let nd=editId?entries.map(e=>e.id===editId?entry:e):[entry,...entries];
-    nd.sort((a,b)=>b.viharNo-a.viharNo);
-    persist(nd);
-    syncToSheet(scriptUrl,'save',entry);
+    nd.sort((a,b)=>+b.viharNo-+a.viharNo);
+    save(nd);syncToSheet(scriptUrl,'save',entry);
     toast_(editId?'Entry updated! ✓':'Vihar saved! 🙏🏻');
-    resetForm(nd);setTab('entries');
+    reset(nd);setTab('entries');
   }
 
-  function resetForm(nd=[]){
-    const maxNo=nd.length?Math.max(...nd.map(e=>+e.viharNo)):103;
-    setForm(blankForm(maxNo));
-    setWalkers(['','']);setVehicles(['']);setWheelchairs(['']);
+  function reset(nd=[]){
+    const mx=nd.length?Math.max(...nd.map(e=>+e.viharNo)):0;
+    setForm(blankForm(mx));
+    setSevak(['']);setVehSevak(['']);setSevika(['']);setVehSevika(['']);
     setEditId(null);setPreview(false);
   }
 
@@ -218,15 +259,16 @@ function App(){
     setForm({viharNo:e.viharNo,date:e.date,timeFrom:e.timeFrom,timeTo:e.timeTo,
       thanaSadhavijee:e.thanaSadhavijee||'',thanaSadhujee:e.thanaSadhujee||'',
       km:e.km,fromDerasar:e.fromDerasar,toDerasar:e.toDerasar});
-    setWalkers(e.walkers?.length?[...e.walkers]:['']);
-    setVehicles(e.vehicleSevak?.length?[...e.vehicleSevak]:['']);
-    setWheelchairs(e.wheelchairSevak?.length?[...e.wheelchairSevak]:['']);
+    setSevak(e.sevak?.length?[...e.sevak]:['']);
+    setVehSevak(e.vehicleSevak?.length?[...e.vehicleSevak]:['']);
+    setSevika(e.sevika?.length?[...e.sevika]:['']);
+    setVehSevika(e.vehicleSevika?.length?[...e.vehicleSevika]:['']);
     setEditId(e.id);setPreview(false);setTab('new');setExpanded(null);
   }
 
-  async function confirmDelete(id){
+  async function doDelete(id){
     const nd=entries.filter(e=>e.id!==id);
-    persist(nd);syncToSheet(scriptUrl,'delete',id);
+    save(nd);syncToSheet(scriptUrl,'delete',id);
     setDelConfirm(null);setExpanded(null);toast_('Entry deleted');
   }
 
@@ -236,56 +278,50 @@ function App(){
     if(navigator.clipboard)navigator.clipboard.writeText(msg).then(done).catch(()=>fb(msg,done));
     else fb(msg,done);
   }
-  function fb(text,cb){const el=document.createElement('textarea');el.value=text;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);cb();}
+  function fb(t,cb){const el=document.createElement('textarea');el.value=t;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);cb();}
 
-  function saveScriptUrl(){
+  function saveScript(){
     const u=scriptInput.trim();
     localStorage.setItem(LS_SCRIPT,u);
     setScriptUrl(u);setShowSetup(false);
     toast_('Settings saved! Syncing…');
-    init();
+    setTimeout(()=>init(),300);
   }
 
-  // ── Reports ──
+  async function doNewYear(){
+    const yr=new Date().getFullYear();
+    await syncToSheet(scriptUrl,'newYear',yr);
+    localStorage.removeItem(LS_ENTRIES);
+    save([]);setYearConfirm(false);setShowSetup(false);
+    toast_('New year started! Vihar No. reset to 1 🙏🏻');
+  }
+
+  // Reports
   const totalKm=entries.reduce((s,e)=>s+(+e.km||0),0);
   const totalSv=entries.reduce((s,e)=>s+(+e.thanaSadhavijee||0),0);
   const totalSj=entries.reduce((s,e)=>s+(+e.thanaSadhujee||0),0);
-  const monthly={};
+
+  const yearly={};
   entries.forEach(e=>{
     if(!e.date)return;
-    const[y,m]=e.date.split('-');const k=`${y}-${m}`;
-    if(!monthly[k])monthly[k]={v:0,km:0,sv:0,sj:0};
-    monthly[k].v++;monthly[k].km+=(+e.km||0);
-    monthly[k].sv+=(+e.thanaSadhavijee||0);monthly[k].sj+=(+e.thanaSadhujee||0);
+    const p=e.date.split('-');
+    if(!p[0]||p[0]==='undefined')return;
+    const y=p[0];
+    if(!yearly[y])yearly[y]={v:0,km:0,sv:0,sj:0};
+    yearly[y].v++;yearly[y].km+=(+e.km||0);
+    yearly[y].sv+=(+e.thanaSadhavijee||0);yearly[y].sj+=(+e.thanaSadhujee||0);
   });
-  const mRows=Object.entries(monthly).sort((a,b)=>b[0]>a[0]?1:-1).slice(0,12).map(([k,v])=>{
-    const[y,mo]=k.split('-');return{label:`${MONTHS[+mo-1]} ${y}`,...v};
-  });
+  const yRows=Object.entries(yearly).sort((a,b)=>b[0]>a[0]?1:-1).map(([y,v])=>({label:y,...v}));
+
   const sevakCnt={};
-  entries.forEach(e=>[...(e.walkers||[]),...(e.vehicleSevak||[]),...(e.wheelchairSevak||[])].forEach(s=>{if(s)sevakCnt[s]=(sevakCnt[s]||0)+1;}));
+  entries.forEach(e=>[...(e.sevak||[]),(e.walkers||[]),...(e.vehicleSevak||[])].flat().forEach(s=>{if(s)sevakCnt[s]=(sevakCnt[s]||0)+1;}));
   const topSevaks=Object.entries(sevakCnt).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
-  const prevEntry={...form,walkers,vehicleSevak:vehicles,wheelchairSevak:wheelchairs,id:'prev'};
+  const sevikaCnt={};
+  entries.forEach(e=>[...(e.sevika||[]),...(e.vehicleSevika||[])].forEach(s=>{if(s)sevikaCnt[s]=(sevikaCnt[s]||0)+1;}));
+  const topSevikas=Object.entries(sevikaCnt).sort((a,b)=>b[1]-a[1]).slice(0,5);
 
-  // ── Dynamic list helpers ──
-  function ListInput({items,setItems,icon,placeholder,label}){
-    return(
-      <div style={{marginTop:12}}>
-        <label style={S.lbl}>{icon} {label}</label>
-        {items.map((v,i)=>(
-          <div key={i} style={{display:'flex',gap:6,marginBottom:7}}>
-            <input style={{...S.inp,flex:1}} type="text" value={v}
-              onChange={e=>setItems(a=>a.map((x,j)=>j===i?e.target.value:x))}
-              placeholder={`${placeholder} ${i+1}`}/>
-            {items.length>1&&<button style={{...S.btn,...S.bDel,padding:'9px 12px',minWidth:38}}
-              onClick={()=>setItems(a=>a.filter((_,j)=>j!==i))}>✕</button>}
-          </div>
-        ))}
-        <button style={{...S.btn,...S.bOut,width:'100%',padding:'8px',fontSize:13}}
-          onClick={()=>setItems(a=>[...a,''])}>+ Add {label}</button>
-      </div>
-    );
-  }
+  const prev={...form,sevak,vehicleSevak,sevika,vehicleSevika,id:'prev'};
 
   if(loading)return(
     <div style={{...S.app,alignItems:'center',justifyContent:'center'}}>
@@ -299,7 +335,8 @@ function App(){
 
   return(
     <div style={S.app}>
-      {/* ── Toast ── */}
+
+      {/* Toast */}
       {toast&&(
         <div style={{position:'fixed',top:66,left:'50%',transform:'translateX(-50%)',
           background:toast.type==='err'?C.red:C.green,color:'#fff',padding:'10px 22px',
@@ -309,37 +346,69 @@ function App(){
         </div>
       )}
 
-      {/* ── Setup Modal ── */}
-      {showSetup&&(
-        <div style={{position:'fixed',inset:0,background:'#00000070',zIndex:300,display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
-          <div style={{background:'#fff',borderRadius:'20px 20px 0 0',padding:24,width:'100%',maxWidth:480,boxShadow:'0 -8px 32px #00000030'}}>
-            <div style={{fontSize:20,fontWeight:900,color:C.dark,marginBottom:6}}>⚙️ Google Sheets Setup</div>
-            <div style={{fontSize:13,color:C.muted,marginBottom:14,lineHeight:1.7}}>
-              Paste your Google Apps Script Web App URL below so all captains share the same data.
+      {/* New Year Confirm */}
+      {yearConfirm&&(
+        <div style={{position:'fixed',inset:0,background:'#00000070',zIndex:400,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div style={{background:'#fff',borderRadius:18,padding:24,width:'100%',maxWidth:340,boxShadow:'0 8px 32px #00000030'}}>
+            <div style={{fontSize:36,textAlign:'center',marginBottom:10}}>🎊</div>
+            <div style={{fontSize:16,fontWeight:900,color:C.dark,textAlign:'center',marginBottom:8}}>Start New Year?</div>
+            <div style={{fontSize:13,color:C.muted,textAlign:'center',lineHeight:1.7,marginBottom:8}}>
+              This will:<br/>
+              • Save current data to an archive sheet<br/>
+              • Reset Vihar No. back to 1<br/>
+              • Clear the current list on all devices
             </div>
-            <label style={S.lbl}>Apps Script Web App URL</label>
-            <input style={{...S.inp,marginBottom:14}} type="text" value={scriptInput}
-              onChange={e=>setScriptInput(e.target.value)}
-              placeholder="https://script.google.com/macros/s/…/exec"/>
-            <div style={{display:'flex',gap:8}}>
-              <button style={{...S.btn,...S.bGh,flex:1}} onClick={()=>setShowSetup(false)}>Cancel</button>
-              <button style={{...S.btn,...S.bP,flex:2}} onClick={saveScriptUrl}>Save & Sync</button>
+            <div style={{background:'#FFF3E0',border:'1px solid #FFCC80',borderRadius:8,padding:'8px 12px',fontSize:12,color:'#E65100',marginBottom:20,textAlign:'center'}}>
+              ⚠️ Do this only once at start of new year
             </div>
-            {!scriptUrl&&(
-              <div style={{marginTop:14,background:'#FFF8EC',border:`1px solid ${C.border}`,borderRadius:10,padding:12,fontSize:12,color:C.muted,lineHeight:1.8}}>
-                <b>How to get the URL:</b><br/>
-                1. Open your Google Sheet → Extensions → Apps Script<br/>
-                2. Paste the Code.gs content provided<br/>
-                3. Click Deploy → New Deployment → Web App<br/>
-                4. Set "Who has access" to <b>Anyone</b><br/>
-                5. Copy the URL and paste above
-              </div>
-            )}
+            <div style={{display:'flex',gap:10}}>
+              <button style={{...S.btn,...S.bGh,flex:1}} onClick={()=>setYearConfirm(false)}>Cancel</button>
+              <button style={{...S.btn,...S.bDanger,flex:2}} onClick={doNewYear}>Yes, Start New Year</button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* ── Delete Confirm ── */}
+      {/* Setup Modal */}
+      {showSetup&&!yearConfirm&&(
+        <div style={{position:'fixed',inset:0,background:'#00000070',zIndex:300,display:'flex',alignItems:'flex-end',justifyContent:'center'}}>
+          <div style={{background:'#fff',borderRadius:'20px 20px 0 0',padding:24,width:'100%',maxWidth:480,boxShadow:'0 -8px 32px #00000030',maxHeight:'90vh',overflowY:'auto'}}>
+            <div style={{fontSize:18,fontWeight:900,color:C.dark,marginBottom:12}}>⚙️ Settings</div>
+
+            <label style={S.lbl}>Google Apps Script URL</label>
+            <input style={{...S.inp,marginBottom:10}} type="text" value={scriptInput}
+              onChange={e=>setScriptInput(e.target.value)}
+              placeholder="https://script.google.com/macros/s/…/exec"/>
+            <button style={{...S.btn,...S.bP,width:'100%'}} onClick={saveScript}>Save & Sync</button>
+
+            {!scriptUrl&&(
+              <div style={{marginTop:12,background:'#FFF8EC',border:`1px solid ${C.border}`,borderRadius:10,padding:12,fontSize:12,color:C.muted,lineHeight:1.8}}>
+                <b>How to connect Google Sheets:</b><br/>
+                1. Open your Google Sheet → Extensions → Apps Script<br/>
+                2. Paste Code.gs content → Save<br/>
+                3. Deploy → New Deployment → Web App<br/>
+                4. Who has access: <b>Anyone</b> → Deploy → Authorize<br/>
+                5. Copy the URL and paste above
+              </div>
+            )}
+
+            <div style={{marginTop:18,borderTop:`1px solid ${C.bl}`,paddingTop:16}}>
+              <div style={{fontSize:13,fontWeight:800,color:C.dark,marginBottom:4}}>🎊 New Year Reset</div>
+              <div style={{fontSize:12,color:C.muted,marginBottom:10,lineHeight:1.7}}>
+                Archives this year's data in Google Sheets and resets Vihar No. back to 1. Use once at the start of each new year.
+              </div>
+              <button style={{...S.btn,width:'100%',background:'#FFF3E0',color:'#E65100',border:'1px solid #FFCC80',fontWeight:700,borderRadius:10,cursor:'pointer'}}
+                onClick={()=>setYearConfirm(true)}>
+                🗓 Start New Year (Reset Vihar No.)
+              </button>
+            </div>
+
+            <button style={{...S.btn,...S.bGh,width:'100%',marginTop:14}} onClick={()=>setShowSetup(false)}>Close</button>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirm */}
       {delConfirm&&(
         <div style={{position:'fixed',inset:0,background:'#00000060',zIndex:200,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div style={{background:'#fff',borderRadius:18,padding:24,width:'100%',maxWidth:340,boxShadow:'0 8px 32px #00000030'}}>
@@ -348,13 +417,13 @@ function App(){
             <div style={{fontSize:13,color:C.muted,marginBottom:20,textAlign:'center'}}>{fmtDate(delConfirm.date)} • {delConfirm.fromDerasar} → {delConfirm.toDerasar}</div>
             <div style={{display:'flex',gap:10}}>
               <button style={{...S.btn,...S.bGh,flex:1}} onClick={()=>setDelConfirm(null)}>Cancel</button>
-              <button style={{...S.btn,flex:1,background:C.red,color:'#fff',border:'none'}} onClick={()=>confirmDelete(delConfirm.id)}>Delete</button>
+              <button style={{...S.btn,...S.bDanger,flex:1}} onClick={()=>doDelete(delConfirm.id)}>Delete</button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div style={S.hdr}>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
           <div>
@@ -377,12 +446,13 @@ function App(){
         </div>
       </div>
 
-      {/* ── Content ── */}
+      {/* Scrollable content */}
       <div style={S.scr}>
 
-        {/* ════ FORM ════ */}
+        {/* ══ FORM ══ */}
         {tab==='new'&&!preview&&(
           <div className="su">
+
             {/* Date & Time */}
             <div style={S.card}>
               <div style={S.cHead}>📅 Date & Time</div>
@@ -394,7 +464,7 @@ function App(){
                   </div>
                   <div>
                     <label style={S.lbl}>Vihar No.</label>
-                    <div style={{...S.inp,background:'#F5F0E8',color:C.primary,fontWeight:900,fontSize:15,display:'flex',alignItems:'center',justifyContent:'center',gap:4,border:`1.5px solid ${C.border}`}}>
+                    <div style={{...S.inp,background:'#F5F0E8',color:C.primary,fontWeight:900,fontSize:15,display:'flex',alignItems:'center',justifyContent:'center',gap:4}}>
                       <span style={{fontSize:11,color:C.muted,fontWeight:600}}>Auto</span> #{form.viharNo}
                     </div>
                   </div>
@@ -420,12 +490,14 @@ function App(){
                   <div style={{fontSize:11,color:C.muted,fontWeight:700,marginBottom:8}}>Fill one or both as applicable:</div>
                   <div style={S.r2}>
                     <div>
-                      <label style={S.lbl}>🧘‍♀️ Sadhaviji Bhagvant</label>
-                      <input style={S.inp} type="number" min="0" value={form.thanaSadhavijee} onChange={e=>fc('thanaSadhavijee',e.target.value)} />
+                      <label style={S.lbl}>🧘‍♀️ Sadhviji Bhagvant</label>
+                      <input style={S.inp} type="number" min="0" value={form.thanaSadhavijee}
+                        onChange={e=>fc('thanaSadhavijee',e.target.value)} placeholder="Sadhviji Bhagvant"/>
                     </div>
                     <div>
                       <label style={S.lbl}>🧘 Sadhu Bhagvant</label>
-                      <input style={S.inp} type="number" min="0" value={form.thanaSadhujee} onChange={e=>fc('thanaSadhujee',e.target.value)} />
+                      <input style={S.inp} type="number" min="0" value={form.thanaSadhujee}
+                        onChange={e=>fc('thanaSadhujee',e.target.value)} placeholder="Sadhu Bhagvant"/>
                     </div>
                   </div>
                 </div>
@@ -435,7 +507,8 @@ function App(){
                   </div>
                 )}
                 <label style={S.lbl}>Distance (K.M.) *</label>
-                <input style={{...S.inp,width:'55%'}} type="number" step="0.5" min="0" value={form.km} onChange={e=>fc('km',e.target.value)} placeholder=""/>
+                <input style={{...S.inp,width:'55%'}} type="number" step="0.5" min="0"
+                  value={form.km} onChange={e=>fc('km',e.target.value)} placeholder="K.M."/>
               </div>
             </div>
 
@@ -444,23 +517,33 @@ function App(){
               <div style={S.cHead}>🏫 Vihar Dham</div>
               <div style={S.fp}>
                 <div style={{marginBottom:9}}>
-                  <label style={S.lbl}>🛕 From  *</label>
-                  <input style={S.inp} type="text" value={form.fromDerasar} onChange={e=>fc('fromDerasar',e.target.value)} placeholder=""/>
+                  <label style={S.lbl}>🛕 From *</label>
+                  <input style={S.inp} type="text" value={form.fromDerasar}
+                    onChange={e=>fc('fromDerasar',e.target.value)} placeholder="From"/>
                 </div>
                 <div>
                   <label style={S.lbl}>🛕 To *</label>
-                  <input style={S.inp} type="text" value={form.toDerasar} onChange={e=>fc('toDerasar',e.target.value)} placeholder=""/>
+                  <input style={S.inp} type="text" value={form.toDerasar}
+                    onChange={e=>fc('toDerasar',e.target.value)} placeholder="To"/>
                 </div>
               </div>
             </div>
 
-            {/* Sevak */}
+            {/* Vihar Sevak — Male */}
             <div style={S.card}>
-              <div style={S.cHead}>🙋 Vihar Sevak</div>
+              <div style={S.cHead}>🙋 Vihar Sevak (પુરૂષ)</div>
               <div style={S.fp}>
-                <ListInput items={walkers} setItems={setWalkers} icon="🚶" label="Walker Sevak" placeholder="Walker Sevak"/>
-                <ListInput items={vehicles} setItems={setVehicles} icon="🛵" label="Sevak with Vehicle" placeholder="Vehicle Sevak"/>
-                <ListInput items={wheelchairs} setItems={setWheelchairs} icon="♿" label="Wheelchair Sevak" placeholder="Wheelchair Sevak"/>
+                <ListInput items={sevak}      setItems={setSevak}    icon="🚶"  label="Vihar Sevak"/>
+                <ListInput items={vehicleSevak} setItems={setVehSevak} icon="🛵" label="Sevak with Vehicle"/>
+              </div>
+            </div>
+
+            {/* Vihar Sevika — Female */}
+            <div style={{...S.card,border:'1px solid #D9B3EC'}}>
+              <div style={S.cHeadF}>🙋‍♀️ Vihar Sevika (મહિલા)</div>
+              <div style={S.fp}>
+                <ListInput items={sevika}       setItems={setSevika}    icon="🚶‍♀️" label="Vihar Sevika"        accentColor="#7B2D8B"/>
+                <ListInput items={vehicleSevika} setItems={setVehSevika} icon="🛵"  label="Sevika with Vehicle" accentColor="#7B2D8B"/>
               </div>
             </div>
 
@@ -468,11 +551,11 @@ function App(){
               <button className="tap" style={{...S.btn,...S.bOut,flex:1}} onClick={()=>setPreview(true)}>👁 Preview</button>
               <button className="tap" style={{...S.btn,...S.bP,flex:2}} onClick={submit}>{editId?'Update Entry ✓':'Save Entry 🙏🏻'}</button>
             </div>
-            {editId&&<button style={{...S.btn,...S.bGh,width:'100%',marginTop:7,fontSize:13}} onClick={()=>resetForm(entries)}>✕ Cancel Edit</button>}
+            {editId&&<button style={{...S.btn,...S.bGh,width:'100%',marginTop:7,fontSize:13}} onClick={()=>reset(entries)}>✕ Cancel Edit</button>}
           </div>
         )}
 
-        {/* ════ PREVIEW ════ */}
+        {/* ══ PREVIEW ══ */}
         {tab==='new'&&preview&&(
           <div className="su">
             <div style={{...S.card,border:'2px solid #25D366'}}>
@@ -482,13 +565,13 @@ function App(){
               </div>
               <div style={{padding:14,background:'#E5DDD5'}}>
                 <div style={{background:'#fff',borderRadius:'0 12px 12px 12px',padding:'10px 13px',fontSize:13,color:'#000',lineHeight:1.65,whiteSpace:'pre-wrap',wordBreak:'break-word',boxShadow:'0 1px 3px #0002',maxWidth:'88%',fontFamily:'system-ui,sans-serif'}}>
-                  {makeMsg(prevEntry)}
+                  {makeMsg(prev)}
                 </div>
               </div>
             </div>
             <div style={{display:'flex',gap:8,marginBottom:8}}>
               <button style={{...S.btn,...S.bGh,flex:1}} onClick={()=>setPreview(false)}>← Edit</button>
-              <button className="tap" style={{...S.btn,...S.bWa,flex:2}} onClick={()=>copyMsg(prevEntry)}>
+              <button className="tap" style={{...S.btn,...S.bWa,flex:2}} onClick={()=>copyMsg(prev)}>
                 {copied==='prev'?'✓ Copied!':'📋 Copy for WhatsApp'}
               </button>
             </div>
@@ -496,7 +579,7 @@ function App(){
           </div>
         )}
 
-        {/* ════ ENTRIES ════ */}
+        {/* ══ ENTRIES ══ */}
         {tab==='entries'&&(
           <div className="su">
             {entries.length===0?(
@@ -507,7 +590,8 @@ function App(){
               </div>
             ):entries.map(e=>(
               <div key={e.id} style={S.card}>
-                <div style={{padding:'11px 14px',display:'flex',alignItems:'flex-start',justifyContent:'space-between',cursor:'pointer',gap:8}} onClick={()=>setExpanded(expanded===e.id?null:e.id)}>
+                <div style={{padding:'11px 14px',display:'flex',alignItems:'flex-start',justifyContent:'space-between',cursor:'pointer',gap:8}}
+                  onClick={()=>setExpanded(expanded===e.id?null:e.id)}>
                   <div style={{flex:1}}>
                     <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:3,flexWrap:'wrap'}}>
                       <span style={{fontWeight:900,color:C.primary,fontSize:16}}>Vihar #{e.viharNo}</span>
@@ -522,10 +606,20 @@ function App(){
                 {expanded===e.id&&(
                   <div style={{borderTop:`1px solid ${C.bl}`}}>
                     <div style={{padding:'10px 14px 4px',fontSize:13,color:'#444',lineHeight:1.9}}>
-                      <div style={{fontWeight:700,color:C.muted,fontSize:10,marginBottom:4,textTransform:'uppercase',letterSpacing:0.5}}>Sevak</div>
-                      {(e.walkers||[]).map((w,i)=><div key={i}>🚶 {w}</div>)}
-                      {(e.vehicleSevak||[]).map((v,i)=><div key={i}>🛵 {v}</div>)}
-                      {(e.wheelchairSevak||[]).map((w,i)=><div key={i}>♿ {w}</div>)}
+                      {[...(e.sevak||[]),(e.walkers||[])].flat().concat(e.vehicleSevak||[]).filter(Boolean).length>0&&(
+                        <div style={{marginBottom:6}}>
+                          <div style={{fontWeight:700,color:C.muted,fontSize:10,marginBottom:2,textTransform:'uppercase',letterSpacing:0.5}}>Vihar Sevak</div>
+                          {[...(e.sevak||[]),(e.walkers||[])].flat().filter(Boolean).map((w,i)=><div key={i}>🚶 {w}</div>)}
+                          {(e.vehicleSevak||[]).filter(Boolean).map((v,i)=><div key={i}>🛵 {v}</div>)}
+                        </div>
+                      )}
+                      {[...(e.sevika||[]),...(e.vehicleSevika||[])].filter(Boolean).length>0&&(
+                        <div>
+                          <div style={{fontWeight:700,color:'#7B2D8B',fontSize:10,marginBottom:2,textTransform:'uppercase',letterSpacing:0.5}}>Vihar Sevika</div>
+                          {(e.sevika||[]).filter(Boolean).map((w,i)=><div key={i} style={{color:'#7B2D8B'}}>🚶‍♀️ {w}</div>)}
+                          {(e.vehicleSevika||[]).filter(Boolean).map((v,i)=><div key={i} style={{color:'#7B2D8B'}}>🛵 {v}</div>)}
+                        </div>
+                      )}
                     </div>
                     <div style={{padding:'8px 14px 12px',display:'flex',gap:6}}>
                       <button className="tap" style={{...S.btn,...S.bWa,flex:3,fontSize:12,padding:'9px 8px'}} onClick={()=>copyMsg(e)}>
@@ -541,15 +635,17 @@ function App(){
           </div>
         )}
 
-        {/* ════ REPORTS ════ */}
+        {/* ══ REPORTS ══ */}
         {tab==='reports'&&(
           <div className="su">
+
+            {/* Summary tiles */}
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
               {[
                 {icon:'🔢',label:'Total Vihar',val:entries.length},
                 {icon:'🛣',label:'Total KM',val:totalKm%1===0?totalKm:totalKm.toFixed(1)},
-                {icon:'🧘‍♀️',label:'Sadhavijee',val:totalSv},
-                {icon:'🧘',label:'Sadhujee',val:totalSj},
+                {icon:'🧘‍♀️',label:'Sadhviji Bhagvant',val:totalSv},
+                {icon:'🧘',label:'Sadhu Bhagvant',val:totalSj},
               ].map(item=>(
                 <div key={item.label} style={{background:'#FFF8EC',border:`1.5px solid ${C.border}`,borderRadius:14,padding:'14px 10px',textAlign:'center'}}>
                   <div style={{fontSize:22}}>{item.icon}</div>
@@ -559,20 +655,23 @@ function App(){
               ))}
             </div>
 
-            {mRows.length>0&&(
+            {/* Yearly breakdown */}
+            {yRows.length>0&&(
               <div style={S.card}>
-                <div style={S.cHead}>📅 Monthly Breakdown</div>
+                <div style={S.cHead}>📅 Yearly Summary</div>
                 <div style={{overflowX:'auto'}}>
                   <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
                     <thead>
                       <tr style={{background:'#FFF8EC'}}>
-                        {['Month','Vihar','KM','Sadha.','Sadhu.'].map(h=>(
-                          <th key={h} style={{padding:'7px 8px',textAlign:h==='Month'?'left':'center',color:C.muted,fontWeight:800,fontSize:9,borderBottom:`1px solid ${C.border}`,textTransform:'uppercase',letterSpacing:0.4}}>{h}</th>
+                        {['Year','Vihar','KM','Sadhviji','Sadhu'].map(h=>(
+                          <th key={h} style={{padding:'7px 8px',textAlign:h==='Year'?'left':'center',
+                            color:C.muted,fontWeight:800,fontSize:9,borderBottom:`1px solid ${C.border}`,
+                            textTransform:'uppercase',letterSpacing:0.4}}>{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {mRows.map((r,i)=>(
+                      {yRows.map((r,i)=>(
                         <tr key={i} style={{borderBottom:`1px solid ${C.bl}`,background:i%2===0?'#fff':'#FFFBF4'}}>
                           <td style={{padding:'7px 8px',fontWeight:700,color:C.dark}}>{r.label}</td>
                           <td style={{padding:'7px 8px',textAlign:'center'}}>{r.v}</td>
@@ -587,15 +686,32 @@ function App(){
               </div>
             )}
 
+            {/* Top Sevak */}
             {topSevaks.length>0&&(
               <div style={S.card}>
-                <div style={S.cHead}>🏆 Top Sevaks</div>
+                <div style={S.cHead}>🏆 Top Sevak</div>
                 <div style={{padding:'8px 14px 12px'}}>
                   {topSevaks.map(([name,count],i)=>(
                     <div key={name} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:i<topSevaks.length-1?`1px solid ${C.bl}`:'none'}}>
-                      <div style={{width:28,height:28,borderRadius:'50%',background:i===0?'#FFD700':i===1?'#C0C0C0':i===2?'#CD7F32':C.border,display:'flex',alignItems:'center',justifyContent:'center',fontSize:12,fontWeight:900,color:i<3?'#5C3D00':C.dark,flexShrink:0}}>{i+1}</div>
+                      <Medal rank={i}/>
                       <div style={{flex:1,fontWeight:700,color:C.dark,fontSize:14}}>{name}</div>
                       <div style={{fontWeight:900,color:C.primary,fontSize:15}}>{count}<span style={{fontSize:11,fontWeight:600,color:C.muted}}>x</span></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Top Sevika */}
+            {topSevikas.length>0&&(
+              <div style={{...S.card,border:'1px solid #D9B3EC'}}>
+                <div style={S.cHeadF}>🏆 Top Sevika</div>
+                <div style={{padding:'8px 14px 12px'}}>
+                  {topSevikas.map(([name,count],i)=>(
+                    <div key={name} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:i<topSevikas.length-1?'1px solid #E8D0F5':'none'}}>
+                      <Medal rank={i}/>
+                      <div style={{flex:1,fontWeight:700,color:C.dark,fontSize:14}}>{name}</div>
+                      <div style={{fontWeight:900,color:'#7B2D8B',fontSize:15}}>{count}<span style={{fontSize:11,fontWeight:600,color:C.muted}}>x</span></div>
                     </div>
                   ))}
                 </div>
@@ -612,14 +728,16 @@ function App(){
         )}
       </div>
 
-      {/* ── Bottom Nav ── */}
+      {/* Bottom Nav */}
       <div style={S.nav}>
         {[
-          {id:'new',icon:'📝',label:editId?'Edit Entry':'New Entry'},
+          {id:'new',    icon:'📝',label:editId?'Edit Entry':'New Entry'},
           {id:'entries',icon:'📋',label:`Entries${entries.length?` (${entries.length})`:''}`},
           {id:'reports',icon:'📊',label:'Reports'},
         ].map(({id,icon,label})=>(
-          <button key={id} style={{...S.nBtn,color:tab===id?C.primary:'#AAA',borderTop:`2.5px solid ${tab===id?C.primary:'transparent'}`}} onClick={()=>setTab(id)}>
+          <button key={id} style={{...S.nBtn,color:tab===id?C.primary:'#AAA',
+            borderTop:`2.5px solid ${tab===id?C.primary:'transparent'}`}}
+            onClick={()=>setTab(id)}>
             <span style={{fontSize:20}}>{icon}</span>
             <span style={{fontSize:10,fontWeight:700}}>{label}</span>
           </button>
