@@ -50,7 +50,7 @@ const C={
 
 const S={
   hdr:{background:`linear-gradient(135deg,${C.h1},${C.h2})`,color:'#fff',padding:'12px 16px 10px',flexShrink:0,boxShadow:'0 2px 12px #00000030'},
-  scr:{flex:1,overflowY:'auto',padding:'12px 14px 88px 14px',minWidth:0,width:'100%'},
+  scr:{flex:1,overflowY:'auto',overflowX:'hidden',padding:'12px 14px 88px 14px',width:'100%',boxSizing:'border-box'},
   card:{background:C.card,borderRadius:14,border:`1px solid ${C.border}`,marginBottom:10},
   cHead:{padding:'9px 14px',borderBottom:`1px solid ${C.bl}`,display:'flex',alignItems:'center',gap:6,fontSize:13,fontWeight:700,color:C.primary,background:'#FFFBF0'},
   cHeadF:{padding:'9px 14px',borderBottom:'1px solid #E8D0F5',display:'flex',alignItems:'center',gap:6,fontSize:13,fontWeight:700,color:'#7B2D8B',background:'#FAF0FF'},
@@ -294,10 +294,10 @@ function App(){
   },[]);
 
   async function init(){
-    const url=localStorage.getItem(LS_SCRIPT)||'';    setScriptUrl(url);setScriptInput(url);
-    const local=JSON.parse(localStorage.getItem(LS_ENTRIES)||'[]');
+    const url=localStorage.getItem(LS_SCRIPT)||'';
+    setScriptUrl(url);setScriptInput(url);
 
-    // Load cached config
+    // Load cached config for autocomplete
     try{
       const cfg=JSON.parse(localStorage.getItem(LS_CONFIG)||'null');
       if(cfg){setPlaces(cfg.places||[]);setSevakNames(cfg.sevakNames||[]);setSevikaNames(cfg.sevikaNames||[]);}
@@ -310,17 +310,20 @@ function App(){
         apiCall(url,'getConfig'),
       ]);
       setSyncing(false);
-
       if(config&&config.success){
         const cfg={places:config.places||[],sevakNames:config.sevakNames||[],sevikaNames:config.sevikaNames||[]};
         setPlaces(cfg.places);setSevakNames(cfg.sevakNames);setSevikaNames(cfg.sevikaNames);
         localStorage.setItem(LS_CONFIG,JSON.stringify(cfg));
       }
-      if(remote&&remote.success&&remote.entries.length>0){
-        const merged=merge(local,remote.entries);
-        apply(merged);setLoading(false);return;
+      if(remote&&remote.success){
+        // Remote is always source of truth — overwrite local completely
+        const data=remote.entries||[];
+        localStorage.setItem(LS_ENTRIES,JSON.stringify(data));
+        apply(data);setLoading(false);return;
       }
     }
+    // No script URL or network failed — fall back to local cache
+    const local=JSON.parse(localStorage.getItem(LS_ENTRIES)||'[]');
     apply(local);setLoading(false);
   }
 
@@ -336,7 +339,19 @@ function App(){
     localStorage.setItem(LS_ENTRIES,JSON.stringify(data));apply(data);
   }
 
-  function toast_(msg,type='ok'){setToast({msg,type});setTimeout(()=>setToast(null),2600);}
+  function switchTab(id){
+    setTab(id);
+    if((id==='entries'||id==='reports')&&scriptUrl){
+      // Background refresh from sheet — no loading spinner
+      apiCall(scriptUrl,'getAll').then(remote=>{
+        if(remote&&remote.success){
+          const data=remote.entries||[];
+          localStorage.setItem(LS_ENTRIES,JSON.stringify(data));
+          apply(data);
+        }
+      });
+    }
+  }
   const fc=(f,v)=>setForm(x=>({...x,[f]:v}));
 
   async function submit(){
@@ -438,7 +453,7 @@ function App(){
   );
 
   return(
-    <div style={{display:'flex',flexDirection:'column',height:'100%',maxWidth:480,margin:'0 auto',position:'relative'}}>
+    <div style={{display:'flex',flexDirection:'column',height:'100%',maxWidth:480,margin:'0 auto',position:'relative',overflow:'hidden',width:'100%'}}>
 
       {/* Toast */}
       {toast&&(
@@ -753,42 +768,42 @@ function App(){
 
         {/* ══ REPORTS ══ */}
         {tab==='reports'&&(
-          <div className="su">
+          <div className="su" style={{width:'100%',boxSizing:'border-box'}}>
             {/* This Year header */}
-            <div style={{background:`linear-gradient(135deg,${C.h1},${C.h2})`,borderRadius:14,padding:'14px 16px',marginBottom:12,color:'#fff',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <div style={{background:`linear-gradient(135deg,${C.h1},${C.h2})`,borderRadius:14,padding:'14px 16px',marginBottom:12,color:'#fff',display:'flex',alignItems:'center',justifyContent:'space-between',boxSizing:'border-box'}}>
               <div>
                 <div style={{fontSize:11,opacity:0.8,fontWeight:700,textTransform:'uppercase',letterSpacing:0.5}}>Current Year</div>
                 <div style={{fontSize:20,fontWeight:900,marginTop:2}}>This Year's Summary</div>
               </div>
-              <div style={{fontSize:36}}>📊</div>
+              <div style={{fontSize:36,flexShrink:0}}>📊</div>
             </div>
 
             {/* Summary tiles */}
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12}}>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginBottom:12,width:'100%'}}>
               {[
                 {icon:'🔢',label:'Total Vihar',val:entries.length},
                 {icon:'🛣',label:'Total KM',val:totalKm%1===0?totalKm:totalKm.toFixed(1)},
                 {icon:'🧘‍♀️',label:'Sadhviji Bhagvant',val:totalSv},
                 {icon:'🧘',label:'Sadhu Bhagvant',val:totalSj},
               ].map(item=>(
-                <div key={item.label} style={{background:'#FFF8EC',border:`1.5px solid ${C.border}`,borderRadius:14,padding:'12px 8px',textAlign:'center',minWidth:0,overflow:'hidden'}}>
-                  <div style={{fontSize:22}}>{item.icon}</div>
-                  <div style={{fontSize:24,fontWeight:900,color:C.primary,marginTop:4,lineHeight:1}}>{item.val}</div>
-                  <div style={{fontSize:9,color:C.muted,fontWeight:700,marginTop:4,textTransform:'uppercase',letterSpacing:0.2,wordBreak:'break-word',lineHeight:1.3}}>{item.label}</div>
+                <div key={item.label} style={{background:'#FFF8EC',border:`1.5px solid ${C.border}`,borderRadius:14,padding:'12px 6px',textAlign:'center',minWidth:0,overflow:'hidden',boxSizing:'border-box'}}>
+                  <div style={{fontSize:20}}>{item.icon}</div>
+                  <div style={{fontSize:22,fontWeight:900,color:C.primary,marginTop:3,lineHeight:1}}>{item.val}</div>
+                  <div style={{fontSize:9,color:C.muted,fontWeight:700,marginTop:4,textTransform:'uppercase',letterSpacing:0.2,wordBreak:'break-word',lineHeight:1.3,padding:'0 2px'}}>{item.label}</div>
                 </div>
               ))}
             </div>
 
             {/* Top Sevak */}
             {topSevaks.length>0&&(
-              <div style={S.card}>
+              <div style={{...S.card,width:'100%',boxSizing:'border-box'}}>
                 <div style={S.cHead}>🏆 Top Sevak</div>
                 <div style={{padding:'8px 14px 12px'}}>
                   {topSevaks.map(([name,count],i)=>(
-                    <div key={name} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:i<topSevaks.length-1?`1px solid ${C.bl}`:'none'}}>
+                    <div key={name} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 0',borderBottom:i<topSevaks.length-1?`1px solid ${C.bl}`:'none',minWidth:0}}>
                       <Medal rank={i}/>
                       <div style={{flex:1,fontWeight:700,color:C.dark,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}}>{name}</div>
-                      <div style={{fontWeight:900,color:C.primary,fontSize:15}}>{count}<span style={{fontSize:11,fontWeight:600,color:C.muted}}>x</span></div>
+                      <div style={{fontWeight:900,color:C.primary,fontSize:14,flexShrink:0}}>{count}<span style={{fontSize:11,fontWeight:600,color:C.muted}}>x</span></div>
                     </div>
                   ))}
                 </div>
@@ -797,14 +812,14 @@ function App(){
 
             {/* Top Sevika */}
             {topSevikas.length>0&&(
-              <div style={{...S.card,border:'1px solid #D9B3EC'}}>
+              <div style={{...S.card,border:'1px solid #D9B3EC',width:'100%',boxSizing:'border-box'}}>
                 <div style={S.cHeadF}>🏆 Top Sevika</div>
                 <div style={{padding:'8px 14px 12px'}}>
                   {topSevikas.map(([name,count],i)=>(
-                    <div key={name} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:i<topSevikas.length-1?'1px solid #E8D0F5':'none'}}>
+                    <div key={name} style={{display:'flex',alignItems:'center',gap:8,padding:'8px 0',borderBottom:i<topSevikas.length-1?'1px solid #E8D0F5':'none',minWidth:0}}>
                       <Medal rank={i}/>
                       <div style={{flex:1,fontWeight:700,color:C.dark,fontSize:13,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',minWidth:0}}>{name}</div>
-                      <div style={{fontWeight:900,color:'#7B2D8B',fontSize:15}}>{count}<span style={{fontSize:11,fontWeight:600,color:C.muted}}>x</span></div>
+                      <div style={{fontWeight:900,color:'#7B2D8B',fontSize:14,flexShrink:0}}>{count}<span style={{fontSize:11,fontWeight:600,color:C.muted}}>x</span></div>
                     </div>
                   ))}
                 </div>
@@ -830,7 +845,7 @@ function App(){
         ].map(({id,icon,label})=>(
           <button key={id} style={{...S.nBtn,color:tab===id?C.primary:'#AAA',
             borderTop:`2.5px solid ${tab===id?C.primary:'transparent'}`}}
-            onClick={()=>setTab(id)}>
+            onClick={()=>switchTab(id)}>
             <span style={{fontSize:20}}>{icon}</span>
             <span style={{fontSize:10,fontWeight:700}}>{label}</span>
           </button>
