@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+@import "tailwindcss";
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+  font-family: 'Nunito', sans-serif;
+  background-color: #FFFDF5;
+  color: #3D1F00;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  height: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/*
+ * iOS Safari zooms in on any input with font-size < 16px.
+ * Setting font-size:16px here prevents that zoom. The visual size
+ * is controlled by Tailwind classes on each element.
+ */
+input, select, textarea {
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+}
+
+button {
+  font-family: 'Nunito', sans-serif;
+}
+
+/*
+ * scroll-area: the main scrollable region between header and bottom nav.
+ * Bottom padding = nav height (64px) + iOS home indicator safe area.
+ * Falls back to plain 80px on Android / older iOS.
+ */
+.scroll-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+}
