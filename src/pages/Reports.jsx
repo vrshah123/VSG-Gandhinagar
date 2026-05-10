@@ -15,7 +15,7 @@ export default function Reports() {
   const yearly = calcYearlyStats(entries);
 
   return (
-    <div className="flex flex-col h-full max-w-[480px] mx-auto bg-[#FFFDF5]">
+    <div className="flex flex-col h-full w-full max-w-[480px] mx-auto bg-[#FFFDF5]">
       <header className="px-4 pt-4 pb-3 bg-[#C96800] flex items-center gap-3">
         <div className="flex-1">
           <h1 className="text-white font-black text-base">Annual Report</h1>

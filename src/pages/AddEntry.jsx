@@ -126,7 +126,7 @@ export default function AddEntry() {
   }
 
   return (
-    <div className="flex flex-col h-full max-w-[480px] mx-auto bg-[#FFFDF5]">
+    <div className="flex flex-col h-full w-full max-w-[480px] mx-auto bg-[#FFFDF5]">
       <header className="flex items-center gap-3 px-4 pt-4 pb-3 bg-[#C96800]">
         <button onClick={() => navigate(-1)} className="text-white p-1.5 rounded-xl hover:bg-orange-700">
           <ChevronLeft size={22} />

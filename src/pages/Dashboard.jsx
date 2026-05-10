@@ -28,7 +28,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col h-full max-w-[480px] mx-auto bg-[#FFFDF5]">
+    <div className="flex flex-col h-full w-full max-w-[480px] mx-auto bg-[#FFFDF5]">
       {/* Header */}
       <header className="flex items-center gap-2.5 px-4 pt-4 pb-3 bg-[#C96800]">
         <img src={logo} alt="VSG Logo" className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-orange-300" />
