@@ -216,8 +216,8 @@ function rowToEntry(headers, row) {
     id:           e['ID'],
     viharNo:      e['Vihar No.'],
     date:         e['Date'] ? Utilities.formatDate(new Date(e['Date']), 'Asia/Kolkata', 'yyyy-MM-dd') : '',
-    startTime:    e['Start Time'],
-    endTime:      e['End Time'],
+    startTime:    formatTimeValue(e['Start Time']),
+    endTime:      formatTimeValue(e['End Time']),
     sadhviji:     e['Sadhviji Bhagvant'],
     sadhu:        e['Sadhu Bhagvant'],
     maharajNames: parseList(e['Maharaj Saheb Names']),
@@ -251,6 +251,12 @@ function entryToRow(headers, entry) {
     'Saved By':            entry.savedBy || '',
   };
   return headers.map(h => map[h] !== undefined ? map[h] : '');
+}
+
+function formatTimeValue(val) {
+  if (!val && val !== 0) return '';
+  if (val instanceof Date) return Utilities.formatDate(val, 'Asia/Kolkata', 'HH:mm');
+  return String(val);
 }
 
 function parseList(val) {

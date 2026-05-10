@@ -6,7 +6,16 @@ export function formatDate(dateStr) {
 
 export function formatTime(timeStr) {
   if (!timeStr) return '';
-  const [h, m] = timeStr.split(':').map(Number);
+  let h, m;
+  // Handle ISO datetime strings Google Sheets returns when reading time cells
+  if (typeof timeStr === 'string' && timeStr.includes('T')) {
+    const d = new Date(timeStr);
+    if (!isNaN(d)) { h = d.getUTCHours(); m = d.getUTCMinutes(); }
+    else return timeStr;
+  } else {
+    [h, m] = String(timeStr).split(':').map(Number);
+    if (isNaN(h) || isNaN(m)) return String(timeStr);
+  }
   const ampm = h >= 12 ? 'pm' : 'am';
   const h12 = h % 12 || 12;
   return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`;

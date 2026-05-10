@@ -1,8 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 
 /**
  * strict=true: if the user types but doesn't select from the dropdown,
  * the value is cleared on blur (only when suggestions are available).
+ *
+ * Dropdown only opens on actual user typing — pre-filled values in edit
+ * mode do NOT trigger the dropdown automatically.
  */
 export default function AutoComplete({
   value,
@@ -15,19 +18,20 @@ export default function AutoComplete({
   const [open, setOpen] = useState(false);
   const [filtered, setFiltered] = useState([]);
   const [invalid, setInvalid] = useState(false);
-  const ref = useRef(null);
 
-  useEffect(() => {
-    if (value.length >= 3) {
-      const q = value.toLowerCase();
-      setFiltered(suggestions.filter(s => s.toLowerCase().includes(q)));
-      setOpen(true);
+  function handleInputChange(e) {
+    const val = e.target.value;
+    onChange(val);
+    setInvalid(false);
+    if (val.length >= 3) {
+      const q = val.toLowerCase();
+      const matches = suggestions.filter(s => s.toLowerCase().includes(q));
+      setFiltered(matches);
+      setOpen(matches.length > 0);
     } else {
       setOpen(false);
     }
-    // Clear invalid indicator when user is typing
-    setInvalid(false);
-  }, [value, suggestions]);
+  }
 
   function pick(val) {
     onChange(val);
@@ -37,13 +41,11 @@ export default function AutoComplete({
 
   function handleBlur() {
     setOpen(false);
-    // Strict: clear the field if typed value is not a known suggestion
     if (strict && suggestions.length > 0 && value.trim()) {
       const isKnown = suggestions.some(s => s.toLowerCase() === value.toLowerCase());
       if (!isKnown) {
         onChange('');
         setInvalid(true);
-        // Brief indicator — cleared in next keypress via the useEffect above
         setTimeout(() => setInvalid(false), 2000);
       }
     }
@@ -54,11 +56,11 @@ export default function AutoComplete({
     : 'border-[#E8C97A] focus:border-[#C96800]';
 
   return (
-    <div ref={ref} className="relative">
+    <div className="relative">
       <input
         type="text"
         value={value}
-        onChange={e => onChange(e.target.value)}
+        onChange={handleInputChange}
         onBlur={handleBlur}
         placeholder={placeholder}
         className={`w-full border rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none ${borderCls} ${className}`}
@@ -72,6 +74,7 @@ export default function AutoComplete({
             <li
               key={s}
               onMouseDown={e => { e.preventDefault(); pick(s); }}
+              onTouchStart={e => { e.preventDefault(); pick(s); }}
               className="px-3 py-2.5 text-sm cursor-pointer hover:bg-[#FFF3D6] text-[#3D1F00]"
             >
               {s}

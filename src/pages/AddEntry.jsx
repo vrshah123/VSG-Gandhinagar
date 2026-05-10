@@ -10,6 +10,15 @@ import Toast from '../components/Toast';
 import sadhviji from '../assets/sadhviji.jfif';
 import sadhu from '../assets/sadhu.jfif';
 
+function parseTimeForInput(val) {
+  if (!val) return '';
+  if (typeof val === 'string' && val.includes('T')) {
+    const d = new Date(val);
+    if (!isNaN(d)) return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+  }
+  return String(val);
+}
+
 const DEFAULT_FORM = {
   date: todayISO(),
   startTime: '04:45',
@@ -35,6 +44,8 @@ export default function AddEntry() {
   const [form, setForm] = useState(() => editEntry ? {
     ...DEFAULT_FORM,
     ...editEntry,
+    startTime: parseTimeForInput(editEntry.startTime) || DEFAULT_FORM.startTime,
+    endTime: parseTimeForInput(editEntry.endTime) || DEFAULT_FORM.endTime,
     maharajNames: editEntry.maharajNames || [],
     sevak: editEntry.sevak?.length ? editEntry.sevak : [''],
     sevika: editEntry.sevika?.length ? editEntry.sevika : [''],

@@ -12,7 +12,7 @@ export default function App() {
   return (
     <AuthProvider>
       <HashRouter>
-        <div className="flex flex-col h-full max-w-[480px] mx-auto bg-[#FFFDF5] relative">
+        <div className="flex flex-col h-full w-full max-w-[480px] mx-auto bg-[#FFFDF5] relative">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/add" element={<AddEntry />} />
