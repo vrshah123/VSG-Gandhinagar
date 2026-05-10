@@ -57,11 +57,26 @@ export function useSheets() {
     if (scriptUrl) syncAll();
   }, [scriptUrl, syncAll]);
 
+  // Warm up GAS 30 seconds after initial load so it's ready when user saves
+  useEffect(() => {
+    if (!scriptUrl) return;
+    const t = setTimeout(() => api({ action: 'ping' }).catch(() => {}), 30000);
+    return () => clearTimeout(t);
+  }, [scriptUrl]);
+
   const saveEntry = useCallback(async (entry) => {
     const data = await api({ action: 'save', data: JSON.stringify(entry) });
-    await syncEntries();
+    // Update local cache directly — avoids a second getAll round-trip after every save
+    setEntries(prev => {
+      const exists = prev.some(e => e.id === entry.id);
+      const next = exists
+        ? prev.map(e => e.id === entry.id ? entry : e)
+        : [...prev, entry];
+      localStorage.setItem(ENTRIES_KEY, JSON.stringify(next));
+      return next;
+    });
     return data;
-  }, [syncEntries]);
+  }, []);
 
   const deleteEntry = useCallback(async (id) => {
     await api({ action: 'delete', id });
