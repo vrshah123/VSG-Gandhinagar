@@ -7,8 +7,8 @@ import { todayISO, buildWhatsAppMessage } from '../utils/formatters';
 import AutoComplete from '../components/AutoComplete';
 import ListInput from '../components/ListInput';
 import Toast from '../components/Toast';
-import sadhviji from '../assets/sadhviji.jfif';
-import sadhu from '../assets/sadhu.jfif';
+import sadhviji from '../assets/sadhviji Ms.png';
+import sadhu from '../assets/Sadhu Ms.png';
 
 function parseTimeForInput(val) {
   if (!val) return '';
@@ -159,7 +159,7 @@ export default function AddEntry() {
           <div className="grid grid-cols-2 gap-3">
             <Field label={
               <span className="flex items-center gap-1.5">
-                <img src={sadhviji} className="w-5 h-5 object-contain" alt="" />
+                <img src={sadhviji} className="w-7 h-7 object-contain" alt="" />
                 Sadhviji Bhagwant
               </span>
             }>
@@ -168,7 +168,7 @@ export default function AddEntry() {
             </Field>
             <Field label={
               <span className="flex items-center gap-1.5">
-                <img src={sadhu} className="w-5 h-5 object-contain" alt="" />
+                <img src={sadhu} className="w-7 h-7 object-contain" alt="" />
                 Sadhu Bhagwant
               </span>
             }>
@@ -224,13 +224,13 @@ export default function AddEntry() {
         </Section>
 
         {/* Sevika */}
-        <Section title={<span>Vihar Sevika (Female) <RequiredNote /></span>} accent="#7B2D8B">
+        <Section title={<span>Vihar Sevika (Female) <RequiredNote /></span>} accent="#C96800">
           <ListInput
             items={form.sevika}
             onChange={v => set('sevika', v)}
             suggestions={sevikaNames}
             placeholder="Sevika name..."
-            accentColor="#7B2D8B"
+            accentColor="#C96800"
             strict={sevikaNames.length > 0}
           />
         </Section>

@@ -3,8 +3,10 @@ import { useSheets } from '../hooks/useSheets';
 import { calcYearlyStats, topN } from '../utils/reportHelpers';
 import Medal from '../components/Medal';
 import { RefreshCw } from 'lucide-react';
-import sadhviji from '../assets/sadhviji.jfif';
-import sadhu from '../assets/sadhu.jfif';
+import sadhviji from '../assets/Sadhviji Ms.png';
+import sadhu from '../assets/Sadhu Ms.png';
+import road from '../assets/Road.png'
+import number from '../assets/Number.png'
 
 export default function Reports() {
   const { entries, config, loading, syncAll } = useSheets();
@@ -33,19 +35,21 @@ export default function Reports() {
           <>
             {/* Summary cards */}
             <div className="grid grid-cols-2 gap-3">
-              <YearCard label="Total Vihar" value={yearly.total} color="#C96800" />
-              <YearCard label="Total KM" value={`${yearly.km} km`} color="#1B7A3A" />
+              <YearCard label="Total Vihar" value={yearly.total} color="#1B7A3A"  image={number} />
+              <YearCard label="Total KM" value={`${yearly.km} km`} color="#1B7A3A"  image={road} />
               <YearCard
                 label="Sadhviji Bhagvant"
                 value={yearly.sadhviji}
-                icon={<img src={sadhviji} className="w-7 h-7 object-contain" alt="" />}
-                color="#C96800"
+                // icon={<img src={sadhviji} className="w-7 h-7 object-contain" alt="" />}
+                 image={sadhviji}
+                color="#1B7A3A"
               />
               <YearCard
                 label="Sadhu Bhagvant"
                 value={yearly.sadhu}
-                icon={<img src={sadhu} className="w-7 h-7 object-contain" alt="" />}
-                color="#A85000"
+                // icon={<img src={sadhu} className="w-7 h-7 object-contain" alt="" />}
+                 image={sadhu}
+                color="#1B7A3A"
               />
             </div>
 
@@ -69,11 +73,11 @@ export default function Reports() {
                     <tbody>
                       {yearly.months.map(m => (
                         <tr key={m.key} className="border-t border-[#F5E5B0]">
-                          <td className="px-3 py-2.5 font-semibold text-[#3D1F00] whitespace-nowrap">{m.label}</td>
-                          <td className="px-3 py-2.5 text-center font-black text-[#C96800]">{m.total}</td>
+                          <td className="px-3 py-2.5 font-semibold font-bold text-[#C96800] whitespace-nowrap">{m.label}</td>
+                          <td className="px-3 py-2.5 text-center font-bold text-[#1B7A3A]">{m.total}</td>
                           <td className="px-3 py-2.5 text-center font-bold text-[#1B7A3A]">{m.km}</td>
-                          <td className="px-3 py-2.5 text-center text-[#3D1F00]">{m.sadhviji}</td>
-                          <td className="px-3 py-2.5 text-center text-[#3D1F00]">{m.sadhu}</td>
+                          <td className="px-3 py-2.5 text-center font-bold text-[#1B7A3A]">{m.sadhviji}</td>
+                          <td className="px-3 py-2.5 text-center font-bold text-[#1B7A3A]">{m.sadhu}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -95,9 +99,9 @@ export default function Reports() {
             {/* Top 5 Sevika */}
             {yearly.sevikaRanking.length > 0 && (
               <div className="bg-white border border-[#F5E5B0] rounded-2xl p-4 space-y-2">
-                <p className="font-black text-sm text-[#7B2D8B] mb-3">Top 5 Vihar Sevika</p>
+                <p className="font-black text-sm text-[#C96800] mb-3">Top 5 Vihar Sevika</p>
                 {topN(yearly.sevikaRanking).map((r, i) => (
-                  <Medal key={r.name} rank={i} name={r.name} count={r.count} color="#7B2D8B" />
+                  <Medal key={r.name} rank={i} name={r.name} count={r.count} color="#C96800" />
                 ))}
               </div>
             )}
@@ -108,14 +112,44 @@ export default function Reports() {
   );
 }
 
-function YearCard({ label, value, icon, color }) {
+// function YearCard({ label, value, icon, color }) {
+//   return (
+//     <div className="bg-white border border-[#F5E5B0] rounded-xl px-4 py-3 flex flex-col gap-1">
+//       <div className="flex items-start justify-between">
+//         <span className="text-xs font-bold text-[#8B6525] leading-tight">{label}</span>
+//         {icon}
+//       </div>
+//       <span className="font-black text-xl" style={{ color }}>{value}</span>
+//     </div>
+//   );
+// }
+
+function YearCard({ label, value, icon, color, image }) {
   return (
-    <div className="bg-white border border-[#F5E5B0] rounded-xl px-4 py-3 flex flex-col gap-1">
-      <div className="flex items-start justify-between">
-        <span className="text-xs font-bold text-[#8B6525] leading-tight">{label}</span>
-        {icon}
-      </div>
-      <span className="font-black text-xl" style={{ color }}>{value}</span>
-    </div>
+   <div className="bg-white border border-[#F5E5B0] rounded-xl px-4 py-3 flex items-center gap-3">
+  
+  <div>
+    {/* {icon && <span>{icon}</span>} */}
+     <img
+          src={image}
+          alt=""
+          className="w-10 h-10 object-contain"
+        />
+  </div>
+
+  <div className="flex flex-col">
+    <span className="text-sm font-bold text-[#C96800] leading-tight">
+      {label}
+    </span>
+
+    <span
+      className="font-black text-xl"
+      style={{ color }}
+    >
+      {value}
+    </span>
+  </div>
+
+</div>
   );
 }

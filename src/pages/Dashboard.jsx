@@ -7,10 +7,11 @@ import { PERMISSIONS } from '../config/sheets';
 import { getMonthKey, getMonthLabel } from '../utils/formatters';
 import { calcMonthStats } from '../utils/reportHelpers';
 import SettingsModal from '../components/SettingsModal';
-import logo from '../assets/logo.jfif';
-import sadhviji from '../assets/sadhviji.jfif';
-import sadhu from '../assets/sadhu.jfif';
-
+import logo from '../assets/VSG Logo.jpeg';
+import sadhviji from '../assets/Sadhviji Ms.png';
+import sadhu from '../assets/Sadhu Ms.png';
+import road from '../assets/Road.png';
+import number from '../assets/Number.png'
 export default function Dashboard() {
   const { entries, loading, syncAll, scriptUrl, saveScriptUrl } = useSheets();
   const { fullName, role } = useAuth();
@@ -55,8 +56,8 @@ export default function Dashboard() {
 
         {/* Row 1: Total Vihar + Total KM */}
         <div className="grid grid-cols-2 gap-3">
-          <StatCard label="Total Vihar" value={stats.total} color="#C96800" />
-          <StatCard label="Total KM" value={`${stats.km} km`} color="#1B7A3A" />
+          <StatCard label="Total Vihar" value={stats.total} color="#1B7A3A" image={number} />
+          <StatCard label="Total KM" value={`${stats.km} km`} color="#1B7A3A" image={road} />
         </div>
 
         {/* Row 2: Sadhviji + Sadhu side by side */}
@@ -64,14 +65,16 @@ export default function Dashboard() {
           <StatCard
             label="Sadhviji Bhagvant"
             value={stats.sadhviji}
-            icon={<img src={sadhviji} alt="" className="w-7 h-7 object-contain" />}
-            color="#C96800"
+            // icon={<img src={sadhviji} alt="" className="w-10 h-10 object-contain" />}
+            image={sadhviji}
+            color="#1B7A3A"
           />
           <StatCard
             label="Sadhu Bhagvant"
             value={stats.sadhu}
-            icon={<img src={sadhu} alt="" className="w-7 h-7 object-contain" />}
-            color="#A85000"
+            // icon={<img src={sadhu} alt="" className="w-10 h-10 object-contain" />}
+            image={sadhu}
+            color="#1B7A3A"
           />
         </div>
 
@@ -86,9 +89,9 @@ export default function Dashboard() {
 
         {/* Sevika this month */}
         {stats.sevikaRanking.length > 0 && (
-          <Section title="Vihar Sevika" color="#7B2D8B">
+          <Section title="Vihar Sevika" color="#C96800">
             {stats.sevikaRanking.map((r, i) => (
-              <RankRow key={r.name} rank={i + 1} name={r.name} count={r.count} color="#7B2D8B" />
+              <RankRow key={r.name} rank={i + 1} name={r.name} count={r.count} color="#C96800" />
             ))}
           </Section>
         )}
@@ -119,15 +122,33 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ label, value, icon, color }) {
+function StatCard({ label, value, icon, color, image }) {
   return (
-    <div className="bg-white border border-[#F5E5B0] rounded-xl px-4 py-3 flex flex-col gap-1">
-      <div className="flex items-start justify-between">
-        <span className="text-xs font-bold text-[#8B6525] leading-tight">{label}</span>
-        {icon && <span>{icon}</span>}
-      </div>
-      <span className="font-black text-xl" style={{ color }}>{value}</span>
-    </div>
+   <div className="bg-white border border-[#F5E5B0] rounded-xl px-4 py-3 flex items-center gap-3">
+  
+  <div>
+    {/* {icon && <span>{icon}</span>} */}
+     <img
+          src={image}
+          alt=""
+          className="w-10 h-10 object-contain"
+        />
+  </div>
+
+  <div className="flex flex-col">
+    <span className="text-sm font-bold text-[#C96800] leading-tight">
+      {label}
+    </span>
+
+    <span
+      className="font-black text-xl"
+      style={{ color }}
+    >
+      {value}
+    </span>
+  </div>
+
+</div>
   );
 }
 

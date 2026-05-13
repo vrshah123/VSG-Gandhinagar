@@ -39,10 +39,10 @@ export default function ImportantContacts() {
         </button>
       </header>
 
-      <div className="scroll-area px-4 pt-4 space-y-5">
+      <div className="scroll-area px-4 pt-5 space-y-2">
         {Object.keys(grouped).length === 0 && (
           <div className="text-center py-12">
-            <Phone size={40} className="text-[#E8C97A] mx-auto mb-3" />
+            <Phone size={20} className="text-[#E8C97A] mx-auto mb-3" />
             <p className="text-[#8B6525] font-semibold text-sm">No contacts found.</p>
             <p className="text-xs text-[#8B6525] mt-1">Add contacts to the "Important Contacts" tab in your Google Sheet.</p>
           </div>
@@ -56,9 +56,9 @@ export default function ImportantContacts() {
             >
               {section}
             </h2>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {list.map((c, i) => (
-                <div key={i} className="bg-white border border-[#F5E5B0] rounded-xl px-4 py-3 flex items-center gap-3">
+                <div key={i} className="bg-white border border-[#F5E5B0] rounded-xl px-2 py-1 flex items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-[#3D1F00] text-sm">{c.name}</p>
                     {c.note && <p className="text-xs text-[#8B6525] mt-0.5">{c.note}</p>}
