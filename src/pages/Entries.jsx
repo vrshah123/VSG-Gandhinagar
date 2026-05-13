@@ -117,14 +117,14 @@ export default function Entries() {
                       <Pencil size={14} />
                     </button>
                   )}
-                  {PERMISSIONS.canDeleteEntry(role) && (
+                  /*{PERMISSIONS.canDeleteEntry(role) && (
                     <button
                       onClick={() => setConfirmDelete(entry)}
                       className="flex items-center justify-center gap-1 bg-red-100 text-red-600 font-bold rounded-xl py-2.5 px-3 text-xs"
                     >
                       <Trash2 size={14} />
                     </button>
-                  )}
+                  )}*/
                 </div>
               </div>
             )}
