@@ -1,36 +1,37 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { ChevronLeft, Copy, Check } from 'lucide-react';
-import { useSheets } from '../hooks/useSheets';
-import { useAuth } from '../context/AuthContext';
-import { todayISO, buildWhatsAppMessage } from '../utils/formatters';
-import AutoComplete from '../components/AutoComplete';
-import ListInput from '../components/ListInput';
-import Toast from '../components/Toast';
-import sadhviji from '../assets/sadhviji Ms.png';
-import sadhu from '../assets/Sadhu Ms.png';
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { ChevronLeft, Copy, Check } from "lucide-react";
+import { useSheets } from "../hooks/useSheets";
+import { useAuth } from "../context/AuthContext";
+import { todayISO, buildWhatsAppMessage } from "../utils/formatters";
+import AutoComplete from "../components/AutoComplete";
+import ListInput from "../components/ListInput";
+import Toast from "../components/Toast";
+import sadhviji from "../assets/sadhviji Ms.png";
+import sadhu from "../assets/Sadhu Ms.png";
 
 function parseTimeForInput(val) {
-  if (!val) return '';
-  if (typeof val === 'string' && val.includes('T')) {
+  if (!val) return "";
+  if (typeof val === "string" && val.includes("T")) {
     const d = new Date(val);
-    if (!isNaN(d)) return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+    if (!isNaN(d))
+      return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
   }
   return String(val);
 }
 
 const DEFAULT_FORM = {
   date: todayISO(),
-  startTime: '04:45',
-  endTime: '07:45',
-  sadhviji: '',
-  sadhu: '',
+  startTime: "04:45",
+  endTime: "07:45",
+  sadhviji: "",
+  sadhu: "",
   maharajNames: [],
-  km: '',
-  from: '',
-  to: '',
-  sevak: [''],
-  sevika: [''],
+  km: "",
+  from: "",
+  to: "",
+  sevak: [""],
+  sevika: [""],
 };
 
 export default function AddEntry() {
@@ -41,21 +42,28 @@ export default function AddEntry() {
 
   const editEntry = location.state?.entry || null;
 
-  const [form, setForm] = useState(() => editEntry ? {
-    ...DEFAULT_FORM,
-    ...editEntry,
-    startTime: parseTimeForInput(editEntry.startTime) || DEFAULT_FORM.startTime,
-    endTime: parseTimeForInput(editEntry.endTime) || DEFAULT_FORM.endTime,
-    maharajNames: editEntry.maharajNames || [],
-    sevak: editEntry.sevak?.length ? editEntry.sevak : [''],
-    sevika: editEntry.sevika?.length ? editEntry.sevika : [''],
-  } : DEFAULT_FORM);
+  const [form, setForm] = useState(() =>
+    editEntry
+      ? {
+          ...DEFAULT_FORM,
+          ...editEntry,
+          startTime:
+            parseTimeForInput(editEntry.startTime) || DEFAULT_FORM.startTime,
+          endTime: parseTimeForInput(editEntry.endTime) || DEFAULT_FORM.endTime,
+          maharajNames: editEntry.maharajNames || [],
+          sevak: editEntry.sevak?.length ? editEntry.sevak : [""],
+          sevika: editEntry.sevika?.length ? editEntry.sevika : [""],
+        }
+      : DEFAULT_FORM,
+  );
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(false);
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState(null);
 
-  useEffect(() => { syncConfig(); }, []);
+  useEffect(() => {
+    syncConfig();
+  }, []);
 
   const places = config?.places || [];
   const sevakNames = config?.sevakNames || [];
@@ -64,31 +72,35 @@ export default function AddEntry() {
   const whatsAppMsg = buildWhatsAppMessage({ ...form, viharNo });
 
   function set(field, value) {
-    setForm(f => ({ ...f, [field]: value }));
+    setForm((f) => ({ ...f, [field]: value }));
   }
 
   function validate() {
-    if (!form.date) return 'Date is required';
-    if (!form.from.trim()) return 'From location is required';
-    if (!form.to.trim()) return 'To location is required';
-    if (!form.km || Number(form.km) <= 0) return 'Distance (KM) is required';
+    if (!form.date) return "Date is required";
+    if (!form.from.trim()) return "From location is required";
+    if (!form.to.trim()) return "To location is required";
+    if (!form.km || Number(form.km) <= 0) return "Distance (KM) is required";
 
     const sv = Number(form.sadhviji) || 0;
     const sd = Number(form.sadhu) || 0;
-    if (sv === 0 && sd === 0) return 'Enter count for at least Sadhviji Bhagwant or Sadhu Bhagwant';
+    if (sv === 0 && sd === 0)
+      return "Enter count for at least Sadhviji Bhagwant or Sadhu Bhagwant";
 
     const hasSevak = form.sevak.some(Boolean);
     const hasSevika = form.sevika.some(Boolean);
-    if (!hasSevak && !hasSevika) return 'At least one Vihar Sevak or Vihar Sevika must be added';
+    if (!hasSevak && !hasSevika)
+      return "At least one Vihar Sevak or Vihar Sevika must be added";
 
     // Duplicate check — same date + from + to
-    const isDuplicate = entries.some(e =>
-      e.date === form.date &&
-      e.from?.toLowerCase().trim() === form.from.toLowerCase().trim() &&
-      e.to?.toLowerCase().trim() === form.to.toLowerCase().trim() &&
-      (!editEntry || e.id !== editEntry.id)
+    const isDuplicate = entries.some(
+      (e) =>
+        e.date === form.date &&
+        e.from?.toLowerCase().trim() === form.from.toLowerCase().trim() &&
+        e.to?.toLowerCase().trim() === form.to.toLowerCase().trim() &&
+        (!editEntry || e.id !== editEntry.id),
     );
-    if (isDuplicate) return `A vihar entry from "${form.from}" to "${form.to}" on this date already exists`;
+    if (isDuplicate)
+      return `A vihar entry from "${form.from}" to "${form.to}" on this date already exists`;
 
     return null;
   }
@@ -102,12 +114,16 @@ export default function AddEntry() {
 
   async function handleSave() {
     const err = validate();
-    if (err) { setToast({ message: err, type: 'error' }); return; }
+    if (err) {
+      setToast({ message: err, type: "error" });
+      return;
+    }
 
     setSaving(true);
     try {
       const entry = {
         ...form,
+        date: new Date(form.date).toISOString(),
         viharNo,
         id: editEntry?.id || `vsg-${Date.now()}`,
         sevak: form.sevak.filter(Boolean),
@@ -117,9 +133,9 @@ export default function AddEntry() {
         savedAt: new Date().toISOString(),
       };
       await saveEntry(entry);
-      navigate('/confirm', { state: { entry } });
+      navigate("/confirm", { state: { entry } });
     } catch (e) {
-      setToast({ message: e.message || 'Save failed', type: 'error' });
+      setToast({ message: e.message || "Save failed", type: "error" });
     } finally {
       setSaving(false);
     }
@@ -128,12 +144,19 @@ export default function AddEntry() {
   return (
     <div className="flex flex-col h-full w-full max-w-[480px] mx-auto bg-[#FFFDF5]">
       <header className="flex items-center gap-3 px-4 pt-4 pb-3 bg-[#C96800]">
-        <button onClick={() => navigate(-1)} className="text-white p-1.5 rounded-xl hover:bg-orange-700">
+        <button
+          onClick={() => navigate(-1)}
+          className="text-white p-1.5 rounded-xl hover:bg-orange-700"
+        >
           <ChevronLeft size={22} />
         </button>
         <div className="flex-1">
-          <h1 className="text-white font-black text-base">{editEntry ? 'Edit Vihar' : 'New Vihar Entry'}</h1>
-          <p className="text-orange-100 text-xs font-semibold">Vihar No. {viharNo}</p>
+          <h1 className="text-white font-black text-base">
+            {editEntry ? "Edit Vihar" : "New Vihar Entry"}
+          </h1>
+          <p className="text-orange-100 text-xs font-semibold">
+            Vihar No. {viharNo}
+          </p>
         </div>
       </header>
 
@@ -141,51 +164,95 @@ export default function AddEntry() {
         {/* Date & Time */}
         <Section title="Date & Time">
           <Field label="Date" required>
-            <input type="date" value={form.date} onChange={e => set('date', e.target.value)} className={inputCls} />
+            <input
+              type="date"
+              value={form.date}
+              onChange={(e) => set("date", e.target.value)}
+              className={inputCls}
+            />
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Start Time" required>
-              <input type="time" value={form.startTime} onChange={e => set('startTime', e.target.value)} className={inputCls} />
+              <input
+                type="time"
+                value={form.startTime}
+                onChange={(e) => set("startTime", e.target.value)}
+                className={inputCls}
+              />
             </Field>
             <Field label="End Time" required>
-              <input type="time" value={form.endTime} onChange={e => set('endTime', e.target.value)} className={inputCls} />
+              <input
+                type="time"
+                value={form.endTime}
+                onChange={(e) => set("endTime", e.target.value)}
+                className={inputCls}
+              />
             </Field>
           </div>
         </Section>
 
         {/* Thana */}
         <Section title="Thana & Distance">
-          <p className="text-[10px] text-[#8B6525]">At least one count is required <span className="text-red-500">*</span></p>
+          <p className="text-[10px] text-[#8B6525]">
+            At least one count is required{" "}
+            <span className="text-red-500">*</span>
+          </p>
           <div className="grid grid-cols-2 gap-3">
-            <Field label={
-              <span className="flex items-center gap-1.5">
-                <img src={sadhviji} className="w-7 h-7 object-contain" alt="" />
-                Sadhviji Bhagwant
-              </span>
-            }>
-              <input type="text" inputMode="numeric" value={form.sadhviji} onChange={e => set('sadhviji', e.target.value)}
-                placeholder="e.g. 9" className={inputCls} />
+            <Field
+              label={
+                <span className="flex items-center gap-1.5">
+                  <img
+                    src={sadhviji}
+                    className="w-7 h-7 object-contain"
+                    alt=""
+                  />
+                  Sadhviji Bhagwant
+                </span>
+              }
+            >
+              <input
+                type="text"
+                inputMode="numeric"
+                value={form.sadhviji}
+                onChange={(e) => set("sadhviji", e.target.value)}
+                placeholder="e.g. 9"
+                className={inputCls}
+              />
             </Field>
-            <Field label={
-              <span className="flex items-center gap-1.5">
-                <img src={sadhu} className="w-7 h-7 object-contain" alt="" />
-                Sadhu Bhagwant
-              </span>
-            }>
-              <input type="text" inputMode="numeric" value={form.sadhu} onChange={e => set('sadhu', e.target.value)}
-                placeholder="e.g. 3" className={inputCls} />
+            <Field
+              label={
+                <span className="flex items-center gap-1.5">
+                  <img src={sadhu} className="w-7 h-7 object-contain" alt="" />
+                  Sadhu Bhagwant
+                </span>
+              }
+            >
+              <input
+                type="text"
+                inputMode="numeric"
+                value={form.sadhu}
+                onChange={(e) => set("sadhu", e.target.value)}
+                placeholder="e.g. 3"
+                className={inputCls}
+              />
             </Field>
           </div>
           <Field label="Maharaj Saheb Names">
             <ListInput
               items={form.maharajNames}
-              onChange={v => set('maharajNames', v)}
+              onChange={(v) => set("maharajNames", v)}
               placeholder="Add name..."
             />
           </Field>
           <Field label="Distance (KM)" required>
-            <input type="text" inputMode="decimal" value={form.km} onChange={e => set('km', e.target.value)}
-              placeholder="e.g. 12" className={inputCls} />
+            <input
+              type="text"
+              inputMode="decimal"
+              value={form.km}
+              onChange={(e) => set("km", e.target.value)}
+              placeholder="e.g. 12"
+              className={inputCls}
+            />
           </Field>
         </Section>
 
@@ -194,7 +261,7 @@ export default function AddEntry() {
           <Field label="From" required>
             <AutoComplete
               value={form.from}
-              onChange={v => set('from', v)}
+              onChange={(v) => set("from", v)}
               suggestions={places}
               placeholder="Starting location"
               strict={places.length > 0}
@@ -203,7 +270,7 @@ export default function AddEntry() {
           <Field label="To" required>
             <AutoComplete
               value={form.to}
-              onChange={v => set('to', v)}
+              onChange={(v) => set("to", v)}
               suggestions={places}
               placeholder="Destination"
               strict={places.length > 0}
@@ -212,10 +279,17 @@ export default function AddEntry() {
         </Section>
 
         {/* Sevak */}
-        <Section title={<span>Vihar Sevak (Male) <RequiredNote /></span>} accent="#C96800">
+        <Section
+          title={
+            <span>
+              Vihar Sevak (Male) <RequiredNote />
+            </span>
+          }
+          accent="#C96800"
+        >
           <ListInput
             items={form.sevak}
-            onChange={v => set('sevak', v)}
+            onChange={(v) => set("sevak", v)}
             suggestions={sevakNames}
             placeholder="Sevak name..."
             accentColor="#C96800"
@@ -224,10 +298,17 @@ export default function AddEntry() {
         </Section>
 
         {/* Sevika */}
-        <Section title={<span>Vihar Sevika (Female) <RequiredNote /></span>} accent="#C96800">
+        <Section
+          title={
+            <span>
+              Vihar Sevika (Female) <RequiredNote />
+            </span>
+          }
+          accent="#C96800"
+        >
           <ListInput
             items={form.sevika}
-            onChange={v => set('sevika', v)}
+            onChange={(v) => set("sevika", v)}
             suggestions={sevikaNames}
             placeholder="Sevika name..."
             accentColor="#C96800"
@@ -237,18 +318,21 @@ export default function AddEntry() {
 
         <p className="text-[10px] text-[#8B6525] px-1">
           <span className="text-red-500">*</span> Required &nbsp;·&nbsp;
-          Sadhviji or Sadhu count mandatory &nbsp;·&nbsp; At least one Sevak or Sevika mandatory
+          Sadhviji or Sadhu count mandatory &nbsp;·&nbsp; At least one Sevak or
+          Sevika mandatory
         </p>
 
         {/* Preview — toggle with inline copy */}
         <div className="bg-white border border-[#F5E5B0] rounded-2xl overflow-hidden">
           <button
             type="button"
-            onClick={() => setPreview(p => !p)}
+            onClick={() => setPreview((p) => !p)}
             className="w-full flex items-center justify-between px-4 py-3 text-sm font-bold text-[#C96800]"
           >
             <span>👁 Preview WhatsApp Message</span>
-            <span className="text-xs font-semibold text-[#8B6525]">{preview ? 'Hide ▲' : 'Show ▼'}</span>
+            <span className="text-xs font-semibold text-[#8B6525]">
+              {preview ? "Hide ▲" : "Show ▼"}
+            </span>
           </button>
 
           {preview && (
@@ -263,10 +347,20 @@ export default function AddEntry() {
                   type="button"
                   onClick={handleCopy}
                   className={`w-full flex items-center justify-center gap-2 font-bold rounded-xl py-2.5 text-sm transition-colors ${
-                    copied ? 'bg-green-600 text-white' : 'bg-[#25D366] text-white hover:bg-green-600'
+                    copied
+                      ? "bg-green-600 text-white"
+                      : "bg-[#25D366] text-white hover:bg-green-600"
                   }`}
                 >
-                  {copied ? <><Check size={16} /> Copied!</> : <><Copy size={16} /> Copy for WhatsApp</>}
+                  {copied ? (
+                    <>
+                      <Check size={16} /> Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy size={16} /> Copy for WhatsApp
+                    </>
+                  )}
                 </button>
               </div>
             </div>
@@ -280,19 +374,27 @@ export default function AddEntry() {
           disabled={saving}
           className="w-full bg-[#C96800] text-white font-black rounded-xl py-4 text-base disabled:opacity-60 mb-2"
         >
-          {saving ? 'Saving…' : editEntry ? 'Update Entry' : 'Save Entry'}
+          {saving ? "Saving…" : editEntry ? "Update Entry" : "Save Entry"}
         </button>
       </div>
 
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }
 
-function Section({ title, children, accent = '#C96800' }) {
+function Section({ title, children, accent = "#C96800" }) {
   return (
     <div className="bg-white border border-[#F5E5B0] rounded-2xl p-4 space-y-3">
-      <h3 className="font-black text-sm" style={{ color: accent }}>{title}</h3>
+      <h3 className="font-black text-sm" style={{ color: accent }}>
+        {title}
+      </h3>
       {children}
     </div>
   );
@@ -314,4 +416,5 @@ function RequiredNote() {
   return <span className="text-red-500 font-black text-sm ml-0.5">*</span>;
 }
 
-const inputCls = 'w-full border border-[#E8C97A] rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-[#C96800]';
+const inputCls =
+  "w-full border border-[#E8C97A] rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-[#C96800]";
