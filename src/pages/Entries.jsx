@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { RefreshCw, Copy, Pencil, Trash2, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { RefreshCw, Copy, Pencil, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useSheets } from '../hooks/useSheets';
 import { useAuth } from '../context/AuthContext';
 import { PERMISSIONS } from '../config/sheets';
@@ -132,7 +132,7 @@ export default function Entries() {
         ))}
       </div>
 
-      {/* Delete confirm */}
+      {/* Delete confirm }
       {confirmDelete && (
         <div className="fixed inset-0 bg-black/40 z-[100] flex items-end justify-center">
           <div className="w-full max-w-[480px] bg-white rounded-t-2xl p-6 space-y-4">
@@ -144,7 +144,7 @@ export default function Entries() {
             </div>
           </div>
         </div>
-      )}
+      )*/}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
