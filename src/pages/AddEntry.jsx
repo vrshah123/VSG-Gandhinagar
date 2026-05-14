@@ -26,7 +26,7 @@ const DEFAULT_FORM = {
   endTime: "07:45",
   sadhviji: "",
   sadhu: "",
-  maharajNames: [],
+  maharajNames: [""],
   km: "",
   from: "",
   to: "",
@@ -50,7 +50,10 @@ export default function AddEntry() {
           startTime:
             parseTimeForInput(editEntry.startTime) || DEFAULT_FORM.startTime,
           endTime: parseTimeForInput(editEntry.endTime) || DEFAULT_FORM.endTime,
-          maharajNames: editEntry.maharajNames || [],
+          // maharajNames: editEntry.maharajNames || [],
+          maharajNames: editEntry.maharajNames?.length
+            ? editEntry.maharajNames
+            : [""],
           sevak: editEntry.sevak?.length ? editEntry.sevak : [""],
           sevika: editEntry.sevika?.length ? editEntry.sevika : [""],
         }
@@ -123,7 +126,6 @@ export default function AddEntry() {
     try {
       const entry = {
         ...form,
-        date: new Date(form.date).toISOString(),
         viharNo,
         id: editEntry?.id || `vsg-${Date.now()}`,
         sevak: form.sevak.filter(Boolean),
@@ -237,11 +239,28 @@ export default function AddEntry() {
               />
             </Field>
           </div>
-          <Field label="Maharaj Saheb Names">
+          
+          {/* Maharaj Saheb Names — plain text + Add button, no suggestions */}
+          {/* <div className="space-y-1">
+            <label className="text-xs font-bold text-[#8B6525]">
+              Maharaj Saheb Names
+            </label>
             <ListInput
               items={form.maharajNames}
               onChange={(v) => set("maharajNames", v)}
-              placeholder="Add name..."
+              placeholder="Enter name..."
+              suggestions={[]}
+              strict={false}
+            />
+          </div> */}
+
+          <Field label="Maharaj Saheb Names">
+            <input
+              type="text"
+              value={form.maharajNames[0] || ""}
+              onChange={(e) => set("maharajNames", [e.target.value])}
+              placeholder="Enter Maharaj Saheb name..."
+              className={inputCls}
             />
           </Field>
           <Field label="Distance (KM)" required>

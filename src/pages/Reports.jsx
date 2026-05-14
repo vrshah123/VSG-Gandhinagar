@@ -57,7 +57,7 @@ export default function Reports() {
             {yearly.months.length > 0 && (
               <div className="bg-white border border-[#F5E5B0] rounded-2xl overflow-hidden">
                 <div className="px-4 py-3 border-b border-[#F5E5B0] bg-[#FFFDF5]">
-                  <p className="font-black text-sm text-[#3D1F00]">Month-wise Breakdown</p>
+                  <p className="font-black text-sm text-[#3D1F00]">Month-Wise Report</p>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs">

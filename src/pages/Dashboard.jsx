@@ -34,12 +34,15 @@ export default function Dashboard() {
       <header className="flex items-center gap-2.5 px-4 pt-4 pb-3 bg-[#C96800]">
         <img src={logo} alt="VSG Logo" className="w-10 h-10 rounded-full object-cover flex-shrink-0 border-2 border-orange-300" />
         <div className="flex-1 min-w-0">
-          <h1 className="text-white font-black text-base leading-tight">VSG Vihar Seva</h1>
+          <h1 className="text-white font-black text-base leading-tight">Vihar Seva Group , Gandhinagar </h1>
           <p className="text-orange-100 text-xs font-semibold truncate">Welcome, {fullName}</p>
         </div>
-        <button onClick={() => setShowSettings(true)} className="text-white p-2 rounded-xl hover:bg-orange-700" title="Settings">
+
+        {/* Setting Icon Excel Sheet sync */}
+        {/* <button onClick={() => setShowSettings(true)} className="text-white p-2 rounded-xl hover:bg-orange-700" title="Settings">
           <Settings size={18} />
-        </button>
+        </button> */}
+
         <button onClick={syncAll} className="text-white p-2 rounded-xl hover:bg-orange-700" title="Sync">
           <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
         </button>
