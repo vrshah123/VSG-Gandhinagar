@@ -95,7 +95,7 @@ export default function Entries() {
                 <Row label="Time" value={`${formatTime(entry.startTime)} – ${formatTime(entry.endTime)}`} />
                 <Row label="Thana" value={`${entry.sadhviji || 0} Sadhviji + ${entry.sadhu || 0} Sadhu`} />
                 {entry.maharajNames?.length > 0 && (
-                  <Row label="Maharaj Names" value={entry.maharajNames.join(', ')} />
+                  <Row label="Maharaj Saheb Name" value={entry.maharajNames.join(', ')} />
                 )}
                 <Row label="KM" value={`${entry.km} km`} />
                 <Row label="Sevak" value={entry.sevak?.join(', ') || '—'} />
