@@ -3,8 +3,8 @@ import { useSheets } from '../hooks/useSheets';
 import { calcYearlyStats, topN } from '../utils/reportHelpers';
 import Medal from '../components/Medal';
 import { RefreshCw } from 'lucide-react';
-import sadhviji from '../assets/Sadhviji Ms.png';
-import sadhu from '../assets/Sadhu Ms.png';
+import sadhviji from '../assets/SadhvijiMs.png';
+import sadhu from '../assets/SadhuMs.png';
 import road from '../assets/Road.png'
 import number from '../assets/Number.png'
 

@@ -7,8 +7,8 @@ import { todayISO, buildWhatsAppMessage } from "../utils/formatters";
 import AutoComplete from "../components/AutoComplete";
 import ListInput from "../components/ListInput";
 import Toast from "../components/Toast";
-import sadhviji from "../assets/sadhviji Ms.png";
-import sadhu from "../assets/Sadhu Ms.png";
+import sadhviji from "../assets/SadhvijiMs.png";
+import sadhu from "../assets/SadhuMs.png";
 
 function parseTimeForInput(val) {
   if (!val) return "";

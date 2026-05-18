@@ -8,8 +8,8 @@ import { getMonthKey, getMonthLabel } from '../utils/formatters';
 import { calcMonthStats } from '../utils/reportHelpers';
 import SettingsModal from '../components/SettingsModal';
 import logo from '../assets/VSG Logo.jpeg';
-import sadhviji from '../assets/Sadhviji Ms.png';
-import sadhu from '../assets/Sadhu Ms.png';
+import sadhviji from '../assets/SadhvijiMs.png';
+import sadhu from '../assets/SadhuMs.png';
 import road from '../assets/Road.png';
 import number from '../assets/Number.png'
 export default function Dashboard() {
