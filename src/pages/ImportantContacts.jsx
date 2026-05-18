@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Phone, RefreshCw, Search, X } from 'lucide-react';
 import { useSheets } from '../hooks/useSheets';
 
@@ -15,6 +15,7 @@ export default function ImportantContacts() {
   const [openSection, setOpenSection] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const didInitOpenSection = useRef(false);
 
   useEffect(() => { syncConfig(); }, []);
 
@@ -41,17 +42,17 @@ export default function ImportantContacts() {
   const sections = useMemo(() => Object.keys(grouped), [grouped]);
 
   useEffect(() => {
-    if (sections.length === 0) {
-      if (openSection !== null) setOpenSection(null);
-      return;
-    }
-
-    if (openSection === null) {
+    // Only auto-open the first section once after we have data.
+    if (!didInitOpenSection.current && sections.length > 0) {
+      didInitOpenSection.current = true;
       setOpenSection(sections[0]);
       return;
     }
 
-    if (!grouped[openSection]) setOpenSection(sections[0]);
+    // If the currently-open section disappears (data changed), fall back to the first section.
+    if (openSection !== null && sections.length > 0 && !grouped[openSection]) {
+      setOpenSection(sections[0]);
+    }
   }, [sections, grouped, openSection]);
 
   return (
@@ -108,7 +109,7 @@ export default function ImportantContacts() {
         </button>
       </header>
 
-      <div className="scroll-area px-4 pt-5 space-y-2">
+      <div className="scroll-area px-4 pt-5 space-y-4">
         {Object.keys(grouped).length === 0 && (
           <div className="text-center py-12">
             <Phone size={20} className="text-[#E8C97A] mx-auto mb-3" />
@@ -124,7 +125,7 @@ export default function ImportantContacts() {
         )}
 
         {Object.entries(grouped).map(([section, list]) => (
-          <div key={section}>
+          <div key={section} className="pb-1">
             <button
               type="button"
               onClick={() => setOpenSection(prev => (prev === section ? null : section))}

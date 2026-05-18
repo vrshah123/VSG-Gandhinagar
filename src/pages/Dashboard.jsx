@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, Plus, RefreshCw, Search, Settings, X } from 'lucide-react';
 import { useSheets } from '../hooks/useSheets';
@@ -18,6 +18,7 @@ export default function Dashboard() {
   const [showSettings, setShowSettings] = useState(false);
   const [openRankingPanel, setOpenRankingPanel] = useState('sevak');
   const [rankingSearch, setRankingSearch] = useState('');
+  const didInitOpenPanel = useRef(false);
 
   useEffect(() => { syncAll(); }, []);
 
@@ -46,12 +47,17 @@ export default function Dashboard() {
       return;
     }
 
+    // Initialize default open panel once (prefer Sevak, otherwise Sevika).
+    if (!didInitOpenPanel.current) {
+      didInitOpenPanel.current = true;
+      setOpenRankingPanel(hasSevakVisible ? 'sevak' : 'sevika');
+      return;
+    }
+
     // Prefer keeping the current panel open if it has visible rows
     if (openRankingPanel === 'sevak' && !hasSevakVisible && hasSevikaVisible) setOpenRankingPanel('sevika');
     if (openRankingPanel === 'sevika' && !hasSevikaVisible && hasSevakVisible) setOpenRankingPanel('sevak');
 
-    // If current open panel is null, pick the first visible one
-    if (openRankingPanel === null) setOpenRankingPanel(hasSevakVisible ? 'sevak' : 'sevika');
   }, [openRankingPanel, hasSevakVisible, hasSevikaVisible, forceOpenRankings]);
 
   function handleSaveUrl(url) {
