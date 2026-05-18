@@ -29,7 +29,7 @@ export function buildWhatsAppMessage(entry) {
   const {
     viharNo, date, startTime, endTime,
     sadhviji, sadhu, maharajNames,
-    km, from, to,
+    km, from, via, to,
     sevak, sevika,
   } = entry;
 
@@ -46,7 +46,7 @@ export function buildWhatsAppMessage(entry) {
   const sd = Number(sadhu) || 0;
   const thanaParts = [];
   if (sv > 0) thanaParts.push(`${sv} Sadhviji Bhagvant`);
-  if (sd > 0) thanaParts.push(`${sd} Sadhu Bhagvant M.Sa.`);
+  if (sd > 0) thanaParts.push(`${sd} Sadhu Bhagvant`);
   if (thanaParts.length > 0) {
     lines.push(`🙏🏻 *THANA:* ${thanaParts.join(' + ')}`);
   }
@@ -61,6 +61,7 @@ export function buildWhatsAppMessage(entry) {
   lines.push('');
   lines.push(`*🏫 VIHAR DHAM*`);
   lines.push(`🛕 *From :* ${from}`);
+  if (via && String(via).trim()) lines.push(`🛣️ *Via :*  ${String(via).trim()}`);
   lines.push(`🛕 *To :*  ${to}`);
 
   // Sevak — only if filled

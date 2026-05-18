@@ -22,7 +22,7 @@ const SHEETS = {
 const VIHAR_HEADERS = [
   'ID', 'Vihar No.', 'Date', 'Start Time', 'End Time',
   'Sadhviji Bhagvant', 'Sadhu Bhagvant', 'Maharaj Saheb Names',
-  'KM', 'From', 'To',
+  'KM', 'From', 'Via', 'To',
   'Vihar Sevak', 'Vihar Sevika',
   'Saved At', 'Deleted', 'Saved By',
 ];
@@ -205,8 +205,25 @@ function getOrCreateViharSheet() {
     sheet.appendRow(VIHAR_HEADERS);
   } else if (sheet.getLastRow() === 0) {
     sheet.appendRow(VIHAR_HEADERS);
+  } else {
+    ensureViharHeaders(sheet);
   }
   return sheet;
+}
+
+function ensureViharHeaders(sheet) {
+  const lastCol = sheet.getLastColumn();
+  const existing = lastCol ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
+  if (!existing || existing.length === 0) {
+    sheet.getRange(1, 1, 1, VIHAR_HEADERS.length).setValues([VIHAR_HEADERS]);
+    return;
+  }
+
+  const missing = VIHAR_HEADERS.filter(h => existing.indexOf(h) === -1);
+  if (!missing.length) return;
+
+  sheet.insertColumnsAfter(existing.length, missing.length);
+  sheet.getRange(1, existing.length + 1, 1, missing.length).setValues([missing]);
 }
 
 function rowToEntry(headers, row) {
@@ -216,13 +233,14 @@ function rowToEntry(headers, row) {
     id:           e['ID'],
     viharNo:      e['Vihar No.'],
     date:         e['Date'] ? Utilities.formatDate(new Date(e['Date']), 'Asia/Kolkata', 'yyyy-MM-dd') : '',
-    startTime:    formatTimeValue(e['Start Time']),
-    endTime:      formatTimeValue(e['End Time']),
+    startTime:    normalizeTime12(formatTimeValue(e['Start Time'])),
+    endTime:      normalizeTime12(formatTimeValue(e['End Time'])),
     sadhviji:     e['Sadhviji Bhagvant'],
     sadhu:        e['Sadhu Bhagvant'],
     maharajNames: parseList(e['Maharaj Saheb Names']),
     km:           e['KM'],
     from:         e['From'],
+    via:          e['Via'],
     to:           e['To'],
     sevak:        parseList(e['Vihar Sevak']),
     sevika:       parseList(e['Vihar Sevika']),
@@ -236,13 +254,15 @@ function entryToRow(headers, entry) {
     'ID':                  entry.id || '',
     'Vihar No.':           entry.viharNo || '',
     'Date':                entry.date || '',
-    'Start Time':          entry.startTime || '',
-    'End Time':            entry.endTime || '',
+    // Leading apostrophe forces Sheets to keep this as text
+    'Start Time':          entry.startTime ? ("'" + normalizeTime12(entry.startTime)) : '',
+    'End Time':            entry.endTime ? ("'" + normalizeTime12(entry.endTime)) : '',
     'Sadhviji Bhagvant':   entry.sadhviji || 0,
     'Sadhu Bhagvant':      entry.sadhu || 0,
     'Maharaj Saheb Names': (entry.maharajNames || []).filter(Boolean).join(', '),
     'KM':                  entry.km || '',
     'From':                entry.from || '',
+    'Via':                 entry.via || '',
     'To':                  entry.to || '',
     'Vihar Sevak':         (entry.sevak || []).filter(Boolean).join(', '),
     'Vihar Sevika':        (entry.sevika || []).filter(Boolean).join(', '),
@@ -255,8 +275,38 @@ function entryToRow(headers, entry) {
 
 function formatTimeValue(val) {
   if (!val && val !== 0) return '';
-  if (val instanceof Date) return Utilities.formatDate(val, 'Asia/Kolkata', 'HH:mm');
+  if (typeof val === 'string' && val.startsWith("'")) return val.slice(1);
+  if (val instanceof Date) return Utilities.formatDate(val, 'Asia/Kolkata', 'hh:mm a');
   return String(val);
+}
+
+function normalizeTime12(val) {
+  if (!val && val !== 0) return '';
+  const s = String(val).trim();
+  if (!s) return '';
+
+  // Already 12h format (e.g. "04:45 AM")
+  const m12 = s.match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
+  if (m12) {
+    const hh = ('0' + Number(m12[1])).slice(-2);
+    const mm = ('0' + Number(m12[2])).slice(-2);
+    const ap = m12[3].toUpperCase();
+    return `${hh}:${mm} ${ap}`;
+  }
+
+  // 24h format (e.g. "16:05")
+  const m24 = s.match(/^(\d{1,2}):(\d{2})$/);
+  if (m24) {
+    let h = Number(m24[1]);
+    const mm = ('0' + Number(m24[2])).slice(-2);
+    const ap = h >= 12 ? 'PM' : 'AM';
+    h = h % 12 || 12;
+    const hh = ('0' + h).slice(-2);
+    return `${hh}:${mm} ${ap}`;
+  }
+
+  // Date object serialized or other values – keep as string
+  return s;
 }
 
 function parseList(val) {

@@ -17,7 +17,33 @@ function parseTimeForInput(val) {
     if (!isNaN(d))
       return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
   }
+
+  if (typeof val === "string") {
+    const m = val.trim().match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
+    if (m) {
+      let hours = Number(m[1]);
+      const minutes = Number(m[2]);
+      const ampm = m[3].toUpperCase();
+      if (hours === 12) hours = 0;
+      if (ampm === "PM") hours += 12;
+      return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+    }
+  }
   return String(val);
+}
+
+function to12HourTime(value) {
+  if (!value) return "";
+  if (typeof value === "string" && value.trim().match(/[AaPp][Mm]$/)) return value.trim().toUpperCase();
+
+  const [hRaw, mRaw] = String(value).split(":");
+  const hours = Number(hRaw);
+  const minutes = Number(mRaw);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) return String(value);
+
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const h12 = hours % 12 || 12;
+  return `${String(h12).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${ampm}`;
 }
 
 const DEFAULT_FORM = {
@@ -29,6 +55,7 @@ const DEFAULT_FORM = {
   maharajNames: [""],
   km: "",
   from: "",
+  via: "",
   to: "",
   sevak: [""],
   sevika: [""],
@@ -84,6 +111,12 @@ export default function AddEntry() {
     if (!form.to.trim()) return "To location is required";
     if (!form.km || Number(form.km) <= 0) return "Distance (KM) is required";
 
+    const normFrom = form.from.toLowerCase().trim();
+    const normVia = (form.via || "").toLowerCase().trim();
+    const normTo = form.to.toLowerCase().trim();
+    if (normFrom === normTo) return '"From" and "To" cannot be the same';
+    if (normVia && (normVia === normFrom || normVia === normTo)) return '"Via" must be different from "From" and "To"';
+
     const sv = Number(form.sadhviji) || 0;
     const sd = Number(form.sadhu) || 0;
     if (sv === 0 && sd === 0)
@@ -128,6 +161,8 @@ export default function AddEntry() {
         ...form,
         viharNo,
         id: editEntry?.id || `vsg-${Date.now()}`,
+        startTime: to12HourTime(form.startTime),
+        endTime: to12HourTime(form.endTime),
         sevak: form.sevak.filter(Boolean),
         sevika: form.sevika.filter(Boolean),
         maharajNames: form.maharajNames.filter(Boolean),
@@ -254,12 +289,12 @@ export default function AddEntry() {
             />
           </div> */}
 
-          <Field label="Maharaj Saheb Names">
+          <Field label="Maharaj Saheb Name">
             <input
               type="text"
               value={form.maharajNames[0] || ""}
               onChange={(e) => set("maharajNames", [e.target.value])}
-              placeholder="Enter Maharaj Saheb name..."
+              placeholder="Enter Maharaj Saheb Name"
               className={inputCls}
             />
           </Field>
@@ -284,6 +319,15 @@ export default function AddEntry() {
               suggestions={places}
               placeholder="Starting location"
               strict={places.length > 0}
+            />
+          </Field>
+          <Field label="Via (optional)">
+            <AutoComplete
+              value={form.via}
+              onChange={(v) => set("via", v)}
+              suggestions={places}
+              placeholder="Via"
+              strict={false}
             />
           </Field>
           <Field label="To" required>

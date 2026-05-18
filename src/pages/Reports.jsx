@@ -15,6 +15,8 @@ export default function Reports() {
 
   const yearLabel = config?.appConfig?.current_year_label || new Date().getFullYear();
   const yearly = calcYearlyStats(entries);
+  const sevakTop = topRanks(withDenseRanks(yearly.sevakRanking), 5);
+  const sevikaTop = topRanks(withDenseRanks(yearly.sevikaRanking), 5);
 
   return (
     <div className="flex flex-col h-full w-full max-w-[480px] mx-auto bg-[#FFFDF5]">
@@ -87,21 +89,21 @@ export default function Reports() {
             )}
 
             {/* Top 5 Sevak */}
-            {yearly.sevakRanking.length > 0 && (
+            {sevakTop.length > 0 && (
               <div className="bg-white border border-[#F5E5B0] rounded-2xl p-4 space-y-2">
                 <p className="font-black text-sm text-[#C96800] mb-3">Top 5 Vihar Sevak</p>
-                {topN(yearly.sevakRanking).map((r, i) => (
-                  <Medal key={r.name} rank={i} name={r.name} count={r.count} color="#C96800" />
+                {sevakTop.map((r) => (
+                  <Medal key={r.name} rank={r.rank} name={r.name} count={r.count} color="#C96800" />
                 ))}
               </div>
             )}
 
             {/* Top 5 Sevika */}
-            {yearly.sevikaRanking.length > 0 && (
+            {sevikaTop.length > 0 && (
               <div className="bg-white border border-[#F5E5B0] rounded-2xl p-4 space-y-2">
                 <p className="font-black text-sm text-[#C96800] mb-3">Top 5 Vihar Sevika</p>
-                {topN(yearly.sevikaRanking).map((r, i) => (
-                  <Medal key={r.name} rank={i} name={r.name} count={r.count} color="#C96800" />
+                {sevikaTop.map((r) => (
+                  <Medal key={r.name} rank={r.rank} name={r.name} count={r.count} color="#C96800" />
                 ))}
               </div>
             )}
@@ -152,4 +154,18 @@ function YearCard({ label, value, icon, color, image }) {
 
 </div>
   );
+}
+
+function withDenseRanks(ranking) {
+  let prevCount = null;
+  let rank = 0;
+  return (ranking || []).map((r) => {
+    if (prevCount === null || r.count !== prevCount) rank += 1;
+    prevCount = r.count;
+    return { ...r, rank };
+  });
+}
+
+function topRanks(rankingWithRank, maxRank = 5) {
+  return (rankingWithRank || []).filter(r => Number(r.rank) <= maxRank);
 }
