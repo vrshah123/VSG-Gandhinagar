@@ -238,6 +238,23 @@ export default function AddEntry() {
             <Field
               label={
                 <span className="flex items-center gap-1.5">
+                  <img src={sadhu} className="w-7 h-7 object-contain" alt="" />
+                  Sadhu Bhagwant
+                </span>
+              }
+            >
+              <input
+                type="text"
+                inputMode="numeric"
+                value={form.sadhu}
+                onChange={(e) => set("sadhu", e.target.value)}
+                placeholder="e.g. 3"
+                className={inputCls}
+              />
+            </Field>
+            <Field
+              label={
+                <span className="flex items-center gap-1.5">
                   <img
                     src={sadhviji}
                     className="w-7 h-7 object-contain"
@@ -256,23 +273,7 @@ export default function AddEntry() {
                 className={inputCls}
               />
             </Field>
-            <Field
-              label={
-                <span className="flex items-center gap-1.5">
-                  <img src={sadhu} className="w-7 h-7 object-contain" alt="" />
-                  Sadhu Bhagwant
-                </span>
-              }
-            >
-              <input
-                type="text"
-                inputMode="numeric"
-                value={form.sadhu}
-                onChange={(e) => set("sadhu", e.target.value)}
-                placeholder="e.g. 3"
-                className={inputCls}
-              />
-            </Field>
+           
           </div>
           
           {/* Maharaj Saheb Names — plain text + Add button, no suggestions */}

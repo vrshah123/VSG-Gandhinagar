@@ -102,19 +102,20 @@ export default function Dashboard() {
         {/* Row 2: Sadhviji + Sadhu side by side */}
         <div className="grid grid-cols-2 gap-3">
           <StatCard
-            label="Sadhviji Bhagvant"
-            value={stats.sadhviji}
-            // icon={<img src={sadhviji} alt="" className="w-10 h-10 object-contain" />}
-            image={sadhviji}
-            color="#1B7A3A"
-          />
-          <StatCard
             label="Sadhu Bhagvant"
             value={stats.sadhu}
             // icon={<img src={sadhu} alt="" className="w-10 h-10 object-contain" />}
             image={sadhu}
             color="#1B7A3A"
           />
+          <StatCard
+            label="Sadhviji Bhagvant"
+            value={stats.sadhviji}
+            // icon={<img src={sadhviji} alt="" className="w-10 h-10 object-contain" />}
+            image={sadhviji}
+            color="#1B7A3A"
+          />
+         
         </div>
 
         {/* Ranking search (Sevak / Sevika) */}

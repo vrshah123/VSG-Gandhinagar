@@ -126,7 +126,7 @@ export default function ImportantContacts() {
 
         {Object.entries(grouped).map(([section, list]) => (
           <div key={section} className="pb-1">
-            <button
+            {/* <button
               type="button"
               onClick={() => setOpenSection(prev => (prev === section ? null : section))}
               aria-expanded={openSection === section}
@@ -138,7 +138,24 @@ export default function ImportantContacts() {
                 size={18}
                 className={`text-[#8B6525] transition-transform ${openSection === section ? 'rotate-180' : ''}`}
               />
-            </button>
+            </button> */}
+            <button
+  type="button"
+  onClick={() => setOpenSection(prev => (prev === section ? null : section))}
+  className="w-full font-black text-sm mb-2 flex items-center justify-between gap-3 text-left px-3 py-2 rounded-xl"
+  style={{ 
+    backgroundColor: (SECTION_COLORS[section] || '#C96800') + '18',
+    borderLeft: `4px solid ${SECTION_COLORS[section] || '#C96800'}`,
+    color: SECTION_COLORS[section] || '#C96800'
+  }}
+>
+  <span>{section}</span>
+  <ChevronDown
+    size={18}
+    className={`transition-transform ${openSection === section ? 'rotate-180' : ''}`}
+    style={{ color: SECTION_COLORS[section] || '#C96800' }}
+  />
+</button>
 
             {openSection === section && (
               <div className="space-y-1">

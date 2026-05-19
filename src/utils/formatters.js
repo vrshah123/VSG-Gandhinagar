@@ -35,29 +35,29 @@ export function buildWhatsAppMessage(entry) {
 
   const lines = [];
   lines.push(`🚶🏻‍♂️*VSG GANDHINAGAR*🚶🏻`);
-  lines.push(`*🔢 VIHAR NO.-* ${viharNo}`);
+  lines.push(`*🔢 Vihar No :-* ${viharNo}`);
   lines.push('');
-  lines.push(`📅 *DATE:* ${formatDate(date)}`);
-  lines.push(`⏰ *TIME:* ${formatTime(startTime)} to ${formatTime(endTime)}`);
+  lines.push(`📅 *Date :* ${formatDate(date)}`);
+  lines.push(`⏰ *Time :* ${formatTime(startTime)} to ${formatTime(endTime)}`);
   lines.push('');
 
   // Thana — only if at least one count is filled
-  const sv = Number(sadhviji) || 0;
   const sd = Number(sadhu) || 0;
+  const sv = Number(sadhviji) || 0;
   const thanaParts = [];
-  if (sv > 0) thanaParts.push(`${sv} Sadhviji Bhagvant`);
   if (sd > 0) thanaParts.push(`${sd} Sadhu Bhagvant`);
+  if (sv > 0) thanaParts.push(`${sv} Sadhviji Bhagvant`);
   if (thanaParts.length > 0) {
-    lines.push(`🙏🏻 *THANA:* ${thanaParts.join(' + ')}`);
+    lines.push(`🙏🏻 *Thana :* ${thanaParts.join(' + ')}`);
   }
 
   // Maharaj names — only if filled
   const names = (maharajNames || []).filter(Boolean);
   if (names.length > 0) {
-    lines.push(`👤 *M.SA. NAMES:* ${names.join(', ')}`);
+    lines.push(`👤 *M.Sa. Names:* ${names.join(', ')}`);
   }
 
-  lines.push(`🛣 *K.M.:* ${km} K.M.`);
+  lines.push(`🛣 *K.M :* ${km} K.M`);
   lines.push('');
   lines.push(`*🏫 VIHAR DHAM*`);
   lines.push(`🛕 *From :* ${from}`);

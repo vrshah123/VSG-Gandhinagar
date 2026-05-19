@@ -15,8 +15,8 @@ export default function Reports() {
 
   const yearLabel = config?.appConfig?.current_year_label || new Date().getFullYear();
   const yearly = calcYearlyStats(entries);
-  const sevakTop = topRanks(withDenseRanks(yearly.sevakRanking), 5);
-  const sevikaTop = topRanks(withDenseRanks(yearly.sevikaRanking), 5);
+  const sevakTop = topRanks(withDenseRanks(yearly.sevakRanking), 3);
+  const sevikaTop = topRanks(withDenseRanks(yearly.sevikaRanking), 3);
 
   return (
     <div className="flex flex-col h-full w-full max-w-[480px] mx-auto bg-[#FFFDF5]">
@@ -39,6 +39,13 @@ export default function Reports() {
             <div className="grid grid-cols-2 gap-3">
               <YearCard label="Total Vihar" value={yearly.total} color="#1B7A3A"  image={number} />
               <YearCard label="Total KM" value={`${yearly.km} km`} color="#1B7A3A"  image={road} />
+               <YearCard
+                label="Sadhu Bhagvant"
+                value={yearly.sadhu}
+                // icon={<img src={sadhu} className="w-7 h-7 object-contain" alt="" />}
+                 image={sadhu}
+                color="#1B7A3A"
+              />
               <YearCard
                 label="Sadhviji Bhagvant"
                 value={yearly.sadhviji}
@@ -46,13 +53,7 @@ export default function Reports() {
                  image={sadhviji}
                 color="#1B7A3A"
               />
-              <YearCard
-                label="Sadhu Bhagvant"
-                value={yearly.sadhu}
-                // icon={<img src={sadhu} className="w-7 h-7 object-contain" alt="" />}
-                 image={sadhu}
-                color="#1B7A3A"
-              />
+            
             </div>
 
             {/* Month-wise breakdown */}
@@ -91,9 +92,9 @@ export default function Reports() {
             {/* Top 5 Sevak */}
             {sevakTop.length > 0 && (
               <div className="bg-white border border-[#F5E5B0] rounded-2xl p-4 space-y-2">
-                <p className="font-black text-sm text-[#C96800] mb-3">Top 5 Vihar Sevak</p>
+                <p className="font-black text-sm text-[#C96800] mb-3">Top 3 Vihar Sevak</p>
                 {sevakTop.map((r) => (
-                  <Medal key={r.name} rank={r.rank} name={r.name} count={r.count} color="#C96800" />
+                  <Medal key={r.name} rank={r.rank} name={r.name} count={r.count} color="#1B7A3A" />
                 ))}
               </div>
             )}
@@ -101,9 +102,9 @@ export default function Reports() {
             {/* Top 5 Sevika */}
             {sevikaTop.length > 0 && (
               <div className="bg-white border border-[#F5E5B0] rounded-2xl p-4 space-y-2">
-                <p className="font-black text-sm text-[#C96800] mb-3">Top 5 Vihar Sevika</p>
+                <p className="font-black text-sm text-[#C96800] mb-3">Top 3 Vihar Sevika</p>
                 {sevikaTop.map((r) => (
-                  <Medal key={r.name} rank={r.rank} name={r.name} count={r.count} color="#C96800" />
+                  <Medal key={r.name} rank={r.rank} name={r.name} count={r.count} color="#1B7A3A" />
                 ))}
               </div>
             )}

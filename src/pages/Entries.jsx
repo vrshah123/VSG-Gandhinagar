@@ -80,7 +80,11 @@ export default function Entries() {
               className="w-full flex items-center gap-3 px-4 py-3 text-left"
               onClick={() => toggle(entry.id)}
             >
-              <span className="font-black text-[#C96800] text-sm w-8 flex-shrink-0">#{entry.viharNo}</span>
+              {/* <span className="font-black text-[#C96800] text-sm w-8 flex-shrink-0">{entry.viharNo}</span> */}
+    <span className="flex-shrink-0 bg-[#C96800] text-white font-black px-1 py-1 rounded-lg flex flex-col items-center min-w-[45px] w-[35px]">
+  <span className="text-[8px] font-bold uppercase tracking-wide opacity-80 leading-tight text-center">Vihar<br/>No.</span>
+  <span className="text-sm">{entry.viharNo}</span>
+</span>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-[#3D1F00] text-sm truncate">{entry.from} → {entry.to}</p>
                 <p className="text-xs text-[#8B6525]">{formatDate(entry.date)} · {entry.km} km</p>
@@ -93,13 +97,13 @@ export default function Entries() {
               <div className="px-4 pb-4 border-t border-[#F5E5B0] space-y-3 pt-3">
                 <Row label="Date" value={formatDate(entry.date)} />
                 <Row label="Time" value={`${formatTime(entry.startTime)} – ${formatTime(entry.endTime)}`} />
-                <Row label="Thana" value={`${entry.sadhviji || 0} Sadhviji + ${entry.sadhu || 0} Sadhu`} />
+                <Row label="Thana" value={`${entry.sadhu || 0} Sadhu + ${entry.sadhviji || 0} Sadhviji`} />
                 {entry.maharajNames?.length > 0 && (
                   <Row label="Maharaj Saheb Name" value={entry.maharajNames.join(', ')} />
                 )}
                 <Row label="KM" value={`${entry.km} km`} />
-                <Row label="Sevak" value={entry.sevak?.join(', ') || '—'} />
-                <Row label="Sevika" value={entry.sevika?.join(', ') || '—'} />
+                <Row label="Vihar Sevak" value={entry.sevak?.join(', ') || '—'} />
+                <Row label="Vihar Sevika" value={entry.sevika?.join(', ') || '—'} />
 
                 {/* Action buttons */}
                 <div className="flex gap-2 pt-1">
