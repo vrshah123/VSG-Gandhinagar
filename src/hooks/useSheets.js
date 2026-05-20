@@ -3,6 +3,18 @@ import { getScriptUrl, setScriptUrl } from '../config/sheets';
 
 const ENTRIES_KEY = 'vsg-entries-v5';
 const CONFIG_KEY = 'vsg-config-v1';
+const SESSION_KEY = 'vsg-google-session-v1';
+
+function getIdToken() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return '';
+    const s = JSON.parse(raw);
+    return s?.idToken || '';
+  } catch {
+    return '';
+  }
+}
 
 function api(params) {
   const url = getScriptUrl();
@@ -65,7 +77,7 @@ export function useSheets() {
   }, [scriptUrl]);
 
   const saveEntry = useCallback(async (entry) => {
-    const data = await api({ action: 'save', data: JSON.stringify(entry) });
+    const data = await api({ action: 'save', data: JSON.stringify(entry), idToken: getIdToken() });
     // Update local cache directly — avoids a second getAll round-trip after every save
     setEntries(prev => {
       const exists = prev.some(e => e.id === entry.id);
@@ -79,7 +91,7 @@ export function useSheets() {
   }, []);
 
   const deleteEntry = useCallback(async (id) => {
-    await api({ action: 'delete', id });
+    await api({ action: 'delete', id, idToken: getIdToken() });
     await syncEntries();
   }, [syncEntries]);
 

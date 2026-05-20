@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ChevronDown, Plus, RefreshCw, Search, Settings, X } from 'lucide-react';
 import { useSheets } from '../hooks/useSheets';
 import { useAuth } from '../context/AuthContext';
@@ -14,7 +14,8 @@ import road from '../assets/TotalKm.jpg';
 import number from '../assets/TotalVihar.png'
 export default function Dashboard() {
   const { entries, loading, syncAll, scriptUrl, saveScriptUrl } = useSheets();
-  const { fullName, role } = useAuth();
+  const { fullName, role, ensureWriteAccess } = useAuth();
+  const navigate = useNavigate();
   const [showSettings, setShowSettings] = useState(false);
   const [openRankingPanel, setOpenRankingPanel] = useState('sevak');
   const [rankingSearch, setRankingSearch] = useState('');
@@ -82,11 +83,17 @@ export default function Dashboard() {
         <button onClick={syncAll} className="text-white p-2 rounded-xl hover:bg-orange-700" title="Sync">
           <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
         </button>
-        {PERMISSIONS.canAddEntry(role) && (
-          <Link to="/add" className="flex items-center gap-1 bg-white text-[#C96800] font-bold text-sm px-3 py-2 rounded-xl flex-shrink-0">
-            <Plus size={16} /> Add
-          </Link>
-        )}
+        <button
+          type="button"
+          onClick={async () => {
+            if (!PERMISSIONS.canAddEntry(role)) await ensureWriteAccess();
+            navigate('/add');
+          }}
+          className="flex items-center gap-1 bg-white text-[#C96800] font-bold text-sm px-3 py-2 rounded-xl flex-shrink-0"
+          title="Add Entry"
+        >
+          <Plus size={16} /> Add
+        </button>
       </header>
 
       <div className="scroll-area px-4 pt-4 space-y-4">

@@ -93,7 +93,7 @@ export default function AddEntry() {
   const navigate = useNavigate();
   const location = useLocation();
   const { entries, config, saveEntry, nextViharNo, syncConfig } = useSheets();
-  const { session } = useAuth();
+  const { session, ensureWriteAccess } = useAuth();
 
   const editEntry = location.state?.entry || null;
 
@@ -124,6 +124,10 @@ export default function AddEntry() {
   useEffect(() => {
     syncConfig();
   }, []);
+
+  useEffect(() => {
+    ensureWriteAccess().catch(() => navigate(-1));
+  }, [ensureWriteAccess, navigate]);
 
   const places = config?.places || [];
   const sevakNames = config?.sevakNames || [];
@@ -194,7 +198,7 @@ export default function AddEntry() {
         sevak: form.sevak.filter(Boolean),
         sevika: form.sevika.filter(Boolean),
         maharajNames: form.maharajNames.filter(Boolean),
-        savedBy: session.username,
+        savedBy: session.email || session.username || '',
         savedAt: new Date().toISOString(),
       };
       await saveEntry(entry);
