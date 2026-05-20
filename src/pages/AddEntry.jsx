@@ -7,6 +7,7 @@ import { todayISO, buildWhatsAppMessage } from "../utils/formatters";
 import AutoComplete from "../components/AutoComplete";
 import ListInput from "../components/ListInput";
 import Toast from "../components/Toast";
+import TimePicker12 from "../components/TimePicker12";
 import sadhviji from "../assets/SadhvijiMs.png";
 import sadhu from "../assets/SadhuMs.png";
 
@@ -65,12 +66,6 @@ function parseTimeTo24(value) {
 function normalizeTimeForDisplay(value) {
   const hhmm = parseTimeTo24(value);
   if (!hhmm) return value ? String(value) : "";
-  return to12HourTime(hhmm);
-}
-
-function coerceTimeOnBlur(raw, fallback) {
-  const hhmm = parseTimeTo24(raw);
-  if (!hhmm) return fallback;
   return to12HourTime(hhmm);
 }
 
@@ -238,27 +233,17 @@ export default function AddEntry() {
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Start Time" required>
-              <input
-                type="text"
+              <TimePicker12
                 value={form.startTime}
-                onChange={(e) => set("startTime", e.target.value)}
-                onBlur={(e) =>
-                  set("startTime", coerceTimeOnBlur(e.target.value, form.startTime))
-                }
-                placeholder="hh:mm AM/PM"
-                className={inputCls}
+                onChange={(v) => set("startTime", v)}
+                minuteStep={5}
               />
             </Field>
             <Field label="End Time" required>
-              <input
-                type="text"
+              <TimePicker12
                 value={form.endTime}
-                onChange={(e) => set("endTime", e.target.value)}
-                onBlur={(e) =>
-                  set("endTime", coerceTimeOnBlur(e.target.value, form.endTime))
-                }
-                placeholder="hh:mm AM/PM"
-                className={inputCls}
+                onChange={(v) => set("endTime", v)}
+                minuteStep={5}
               />
             </Field>
           </div>
