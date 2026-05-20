@@ -7,9 +7,30 @@ import { todayISO, buildWhatsAppMessage } from "../utils/formatters";
 import AutoComplete from "../components/AutoComplete";
 import ListInput from "../components/ListInput";
 import Toast from "../components/Toast";
-import TimePicker12 from "../components/TimePicker12";
 import sadhviji from "../assets/SadhvijiMs.png";
 import sadhu from "../assets/SadhuMs.png";
+
+function parseTimeForInput(val) {
+  if (!val) return "";
+  if (typeof val === "string" && val.includes("T")) {
+    const d = new Date(val);
+    if (!isNaN(d))
+      return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+  }
+
+  if (typeof val === "string") {
+    const m = val.trim().match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
+    if (m) {
+      let hours = Number(m[1]);
+      const minutes = Number(m[2]);
+      const ampm = m[3].toUpperCase();
+      if (hours === 12) hours = 0;
+      if (ampm === "PM") hours += 12;
+      return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+    }
+  }
+  return String(val);
+}
 
 function to12HourTime(value) {
   if (!value) return "";
@@ -71,8 +92,8 @@ function normalizeTimeForDisplay(value) {
 
 const DEFAULT_FORM = {
   date: todayISO(),
-  startTime: "04:45 AM",
-  endTime: "07:45 AM",
+  startTime: "04:45",
+  endTime: "07:45",
   sadhviji: "",
   sadhu: "",
   maharajNames: [""],
@@ -98,10 +119,10 @@ export default function AddEntry() {
           ...DEFAULT_FORM,
           ...editEntry,
           startTime:
-            normalizeTimeForDisplay(editEntry.startTime) ||
+            parseTimeForInput(editEntry.startTime) ||
             DEFAULT_FORM.startTime,
           endTime:
-            normalizeTimeForDisplay(editEntry.endTime) || DEFAULT_FORM.endTime,
+            parseTimeForInput(editEntry.endTime) || DEFAULT_FORM.endTime,
           // maharajNames: editEntry.maharajNames || [],
           maharajNames: editEntry.maharajNames?.length
             ? editEntry.maharajNames
@@ -189,7 +210,7 @@ export default function AddEntry() {
         sevak: form.sevak.filter(Boolean),
         sevika: form.sevika.filter(Boolean),
         maharajNames: form.maharajNames.filter(Boolean),
-        savedBy: session.username,
+        savedBy: session.email || session.username || '',
         savedAt: new Date().toISOString(),
       };
       await saveEntry(entry);
@@ -233,18 +254,30 @@ export default function AddEntry() {
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Start Time" required>
-              <TimePicker12
-                value={form.startTime}
-                onChange={(v) => set("startTime", v)}
-                minuteStep={5}
-              />
+              <div className="space-y-1">
+                <input
+                  type="time"
+                  value={form.startTime}
+                  onChange={(e) => set("startTime", e.target.value)}
+                  className={inputCls}
+                />
+                <div className="text-[11px] font-semibold text-[#8B6525]">
+                  {normalizeTimeForDisplay(form.startTime)}
+                </div>
+              </div>
             </Field>
             <Field label="End Time" required>
-              <TimePicker12
-                value={form.endTime}
-                onChange={(v) => set("endTime", v)}
-                minuteStep={5}
-              />
+              <div className="space-y-1">
+                <input
+                  type="time"
+                  value={form.endTime}
+                  onChange={(e) => set("endTime", e.target.value)}
+                  className={inputCls}
+                />
+                <div className="text-[11px] font-semibold text-[#8B6525]">
+                  {normalizeTimeForDisplay(form.endTime)}
+                </div>
+              </div>
             </Field>
           </div>
         </Section>
