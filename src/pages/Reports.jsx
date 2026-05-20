@@ -5,8 +5,8 @@ import Medal from '../components/Medal';
 import { RefreshCw } from 'lucide-react';
 import sadhviji from '../assets/SadhvijiMs.png';
 import sadhu from '../assets/SadhuMs.png';
-import road from '../assets/Road.png'
-import number from '../assets/Number.png'
+import road from '../assets/TotalKm.jpg'
+import number from '../assets/TotalVihar.png'
 
 export default function Reports() {
   const { entries, config, loading, syncAll } = useSheets();
@@ -129,14 +129,14 @@ export default function Reports() {
 
 function YearCard({ label, value, icon, color, image }) {
   return (
-   <div className="bg-white border border-[#F5E5B0] rounded-xl px-4 py-3 flex items-center gap-3">
+   <div className="bg-white border border-[#F5E5B0] rounded-xl px-3 py-2 flex items-center gap-3">
   
   <div>
     {/* {icon && <span>{icon}</span>} */}
      <img
           src={image}
           alt=""
-          className="w-10 h-10 object-contain"
+          className="w-12 h-15 object-contain"
         />
   </div>
 
