@@ -114,7 +114,7 @@ export default function AddEntry() {
     const normFrom = form.from.toLowerCase().trim();
     const normVia = (form.via || "").toLowerCase().trim();
     const normTo = form.to.toLowerCase().trim();
-    if (normFrom === normTo) return '"From" and "To" cannot be the same';
+    // if (normFrom === normTo) return '"From" and "To" cannot be the same';
     if (normVia && (normVia === normFrom || normVia === normTo)) return '"Via" must be different from "From" and "To"';
 
     const sv = Number(form.sadhviji) || 0;
@@ -128,15 +128,15 @@ export default function AddEntry() {
       return "At least one Vihar Sevak or Vihar Sevika must be added";
 
     // Duplicate check — same date + from + to
-    const isDuplicate = entries.some(
-      (e) =>
-        e.date === form.date &&
-        e.from?.toLowerCase().trim() === form.from.toLowerCase().trim() &&
-        e.to?.toLowerCase().trim() === form.to.toLowerCase().trim() &&
-        (!editEntry || e.id !== editEntry.id),
-    );
-    if (isDuplicate)
-      return `A vihar entry from "${form.from}" to "${form.to}" on this date already exists`;
+    // const isDuplicate = entries.some(
+    //   (e) =>
+    //     e.date === form.date &&
+    //     e.from?.toLowerCase().trim() === form.from.toLowerCase().trim() &&
+    //     e.to?.toLowerCase().trim() === form.to.toLowerCase().trim() &&
+    //     (!editEntry || e.id !== editEntry.id),
+    // );
+    // if (isDuplicate)
+    //   return `A vihar entry from "${form.from}" to "${form.to}" on this date already exists`;
 
     return null;
   }

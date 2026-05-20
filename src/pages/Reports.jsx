@@ -67,10 +67,10 @@ export default function Reports() {
                     <thead>
                       <tr className="bg-[#FFF3D6]">
                         <th className="text-left px-3 py-2.5 font-black text-[#8B6525]">Month</th>
-                        <th className="px-3 py-2.5 font-black text-[#8B6525] text-center">Vihar</th>
-                        <th className="px-3 py-2.5 font-black text-[#8B6525] text-center">KM</th>
-                        <th className="px-3 py-2.5 font-black text-[#8B6525] text-center">Sadhviji</th>
-                        <th className="px-3 py-2.5 font-black text-[#8B6525] text-center">Sadhu</th>
+                        <th className="px-3 py-2.5 font-black text-[#8B6525] text-center">Total Vihar</th>
+                        <th className="px-3 py-2.5 font-black text-[#8B6525] text-center">Total  Distance (KM)</th>
+                        <th className="px-3 py-2.5 font-black text-[#8B6525] text-center">Total  Sadhu Bhagvant</th>
+                        <th className="px-3 py-2.5 font-black text-[#8B6525] text-center">Total  Sadhviji Bhagvant</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -78,9 +78,9 @@ export default function Reports() {
                         <tr key={m.key} className="border-t border-[#F5E5B0]">
                           <td className="px-3 py-2.5 font-semibold font-bold text-[#C96800] whitespace-nowrap">{m.label}</td>
                           <td className="px-3 py-2.5 text-center font-bold text-[#1B7A3A]">{m.total}</td>
-                          <td className="px-3 py-2.5 text-center font-bold text-[#1B7A3A]">{m.km}</td>
-                          <td className="px-3 py-2.5 text-center font-bold text-[#1B7A3A]">{m.sadhviji}</td>
+                          <td className="px-3 py-2.5 text-center font-bold text-[#1B7A3A]">{m.km} KM</td>
                           <td className="px-3 py-2.5 text-center font-bold text-[#1B7A3A]">{m.sadhu}</td>
+                          <td className="px-3 py-2.5 text-center font-bold text-[#1B7A3A]">{m.sadhviji}</td>
                         </tr>
                       ))}
                     </tbody>

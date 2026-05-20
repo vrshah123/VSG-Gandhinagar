@@ -97,11 +97,11 @@ export default function Entries() {
               <div className="px-4 pb-4 border-t border-[#F5E5B0] space-y-3 pt-3">
                 <Row label="Date" value={formatDate(entry.date)} />
                 <Row label="Time" value={`${formatTime(entry.startTime)} – ${formatTime(entry.endTime)}`} />
-                <Row label="Thana" value={`${entry.sadhu || 0} Sadhu + ${entry.sadhviji || 0} Sadhviji`} />
+                <Row label="Thana" value={`${entry.sadhu || 0} Sadhu Bhagvant+ ${entry.sadhviji || 0} Sadhviji Bhagvant`} />
                 {entry.maharajNames?.length > 0 && (
                   <Row label="Maharaj Saheb Name" value={entry.maharajNames.join(', ')} />
                 )}
-                <Row label="KM" value={`${entry.km} km`} />
+                <Row label="Distance" value={`${entry.km} km`} />
                 <Row label="Vihar Sevak" value={entry.sevak?.join(', ') || '—'} />
                 <Row label="Vihar Sevika" value={entry.sevika?.join(', ') || '—'} />
 
