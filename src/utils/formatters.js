@@ -12,6 +12,17 @@ export function formatTime(timeStr) {
     const d = new Date(timeStr);
     if (!isNaN(d)) { h = d.getUTCHours(); m = d.getUTCMinutes(); }
     else return timeStr;
+  } else if (typeof timeStr === 'string' && timeStr.trim().match(/[AaPp][Mm]$/)) {
+    const match = timeStr.trim().match(/^(\d{1,2})\s*:\s*(\d{1,2})\s*([AaPp][Mm])$/);
+    if (!match) return timeStr;
+    let hours = Number(match[1]);
+    const minutes = Number(match[2]);
+    const ampm = match[3].toLowerCase();
+    if (isNaN(hours) || isNaN(minutes)) return timeStr;
+    if (hours === 12) hours = 0;
+    if (ampm === 'pm') hours += 12;
+    h = hours;
+    m = minutes;
   } else {
     [h, m] = String(timeStr).split(':').map(Number);
     if (isNaN(h) || isNaN(m)) return String(timeStr);

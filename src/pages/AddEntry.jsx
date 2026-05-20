@@ -10,28 +10,6 @@ import Toast from "../components/Toast";
 import sadhviji from "../assets/SadhvijiMs.png";
 import sadhu from "../assets/SadhuMs.png";
 
-function parseTimeForInput(val) {
-  if (!val) return "";
-  if (typeof val === "string" && val.includes("T")) {
-    const d = new Date(val);
-    if (!isNaN(d))
-      return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
-  }
-
-  if (typeof val === "string") {
-    const m = val.trim().match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
-    if (m) {
-      let hours = Number(m[1]);
-      const minutes = Number(m[2]);
-      const ampm = m[3].toUpperCase();
-      if (hours === 12) hours = 0;
-      if (ampm === "PM") hours += 12;
-      return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
-    }
-  }
-  return String(val);
-}
-
 function to12HourTime(value) {
   if (!value) return "";
   if (typeof value === "string" && value.trim().match(/[AaPp][Mm]$/)) return value.trim().toUpperCase();
@@ -46,10 +24,60 @@ function to12HourTime(value) {
   return `${String(h12).padStart(2, "0")}:${String(minutes).padStart(2, "0")} ${ampm}`;
 }
 
+function parseTimeTo24(value) {
+  if (!value) return null;
+  const str = String(value).trim();
+
+  // Google Sheets can return ISO for time cells
+  if (str.includes("T")) {
+    const d = new Date(str);
+    if (isNaN(d)) return null;
+    const hh = String(d.getUTCHours()).padStart(2, "0");
+    const mm = String(d.getUTCMinutes()).padStart(2, "0");
+    return `${hh}:${mm}`;
+  }
+
+  // 12-hour (with AM/PM)
+  const m12 = str.match(/^(\d{1,2})\s*:\s*(\d{1,2})\s*([AaPp][Mm])$/);
+  if (m12) {
+    let hours = Number(m12[1]);
+    const minutes = Number(m12[2]);
+    const ampm = m12[3].toUpperCase();
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes) || minutes < 0 || minutes > 59) return null;
+    if (hours < 1 || hours > 12) return null;
+    if (hours === 12) hours = 0;
+    if (ampm === "PM") hours += 12;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  }
+
+  // 24-hour
+  const m24 = str.match(/^(\d{1,2})\s*:\s*(\d{1,2})$/);
+  if (m24) {
+    const hours = Number(m24[1]);
+    const minutes = Number(m24[2]);
+    if (!Number.isFinite(hours) || !Number.isFinite(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) return null;
+    return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+  }
+
+  return null;
+}
+
+function normalizeTimeForDisplay(value) {
+  const hhmm = parseTimeTo24(value);
+  if (!hhmm) return value ? String(value) : "";
+  return to12HourTime(hhmm);
+}
+
+function coerceTimeOnBlur(raw, fallback) {
+  const hhmm = parseTimeTo24(raw);
+  if (!hhmm) return fallback;
+  return to12HourTime(hhmm);
+}
+
 const DEFAULT_FORM = {
   date: todayISO(),
-  startTime: "04:45",
-  endTime: "07:45",
+  startTime: "04:45 AM",
+  endTime: "07:45 AM",
   sadhviji: "",
   sadhu: "",
   maharajNames: [""],
@@ -75,8 +103,10 @@ export default function AddEntry() {
           ...DEFAULT_FORM,
           ...editEntry,
           startTime:
-            parseTimeForInput(editEntry.startTime) || DEFAULT_FORM.startTime,
-          endTime: parseTimeForInput(editEntry.endTime) || DEFAULT_FORM.endTime,
+            normalizeTimeForDisplay(editEntry.startTime) ||
+            DEFAULT_FORM.startTime,
+          endTime:
+            normalizeTimeForDisplay(editEntry.endTime) || DEFAULT_FORM.endTime,
           // maharajNames: editEntry.maharajNames || [],
           maharajNames: editEntry.maharajNames?.length
             ? editEntry.maharajNames
@@ -110,6 +140,8 @@ export default function AddEntry() {
     if (!form.from.trim()) return "From location is required";
     if (!form.to.trim()) return "To location is required";
     if (!form.km || Number(form.km) <= 0) return "Distance (KM) is required";
+    if (!parseTimeTo24(form.startTime)) return "Start Time is invalid";
+    if (!parseTimeTo24(form.endTime)) return "End Time is invalid";
 
     const normFrom = form.from.toLowerCase().trim();
     const normVia = (form.via || "").toLowerCase().trim();
@@ -157,12 +189,14 @@ export default function AddEntry() {
 
     setSaving(true);
     try {
+      const startTime24 = parseTimeTo24(form.startTime);
+      const endTime24 = parseTimeTo24(form.endTime);
       const entry = {
         ...form,
         viharNo,
         id: editEntry?.id || `vsg-${Date.now()}`,
-        startTime: to12HourTime(form.startTime),
-        endTime: to12HourTime(form.endTime),
+        startTime: to12HourTime(startTime24),
+        endTime: to12HourTime(endTime24),
         sevak: form.sevak.filter(Boolean),
         sevika: form.sevika.filter(Boolean),
         maharajNames: form.maharajNames.filter(Boolean),
@@ -211,17 +245,25 @@ export default function AddEntry() {
           <div className="grid grid-cols-2 gap-3">
             <Field label="Start Time" required>
               <input
-                type="time"
+                type="text"
                 value={form.startTime}
                 onChange={(e) => set("startTime", e.target.value)}
+                onBlur={(e) =>
+                  set("startTime", coerceTimeOnBlur(e.target.value, form.startTime))
+                }
+                placeholder="hh:mm AM/PM"
                 className={inputCls}
               />
             </Field>
             <Field label="End Time" required>
               <input
-                type="time"
+                type="text"
                 value={form.endTime}
                 onChange={(e) => set("endTime", e.target.value)}
+                onBlur={(e) =>
+                  set("endTime", coerceTimeOnBlur(e.target.value, form.endTime))
+                }
+                placeholder="hh:mm AM/PM"
                 className={inputCls}
               />
             </Field>

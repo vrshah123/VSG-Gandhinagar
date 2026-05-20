@@ -20,6 +20,7 @@ export default function ImportantContacts() {
   useEffect(() => { syncConfig(); }, []);
 
   const contacts = config?.importantContacts || [];
+  const forceOpenSections = Boolean(searchQuery.trim());
   const filteredContacts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     if (!q) return contacts;
@@ -42,6 +43,7 @@ export default function ImportantContacts() {
   const sections = useMemo(() => Object.keys(grouped), [grouped]);
 
   useEffect(() => {
+    if (forceOpenSections) return;
     // Only auto-open the first section once after we have data.
     if (!didInitOpenSection.current && sections.length > 0) {
       didInitOpenSection.current = true;
@@ -53,7 +55,7 @@ export default function ImportantContacts() {
     if (openSection !== null && sections.length > 0 && !grouped[openSection]) {
       setOpenSection(sections[0]);
     }
-  }, [sections, grouped, openSection]);
+  }, [sections, grouped, openSection, forceOpenSections]);
 
   return (
     <div className="flex flex-col h-full w-full max-w-[480px] mx-auto bg-[#FFFDF5]">
@@ -141,7 +143,11 @@ export default function ImportantContacts() {
             </button> */}
             <button
   type="button"
-  onClick={() => setOpenSection(prev => (prev === section ? null : section))}
+  onClick={() => {
+    if (forceOpenSections) return;
+    setOpenSection(prev => (prev === section ? null : section));
+  }}
+  aria-expanded={forceOpenSections || openSection === section}
   className="w-full font-black text-sm mb-2 flex items-center justify-between gap-3 text-left px-3 py-2 rounded-xl"
   style={{ 
     backgroundColor: (SECTION_COLORS[section] || '#C96800') + '18',
@@ -152,12 +158,12 @@ export default function ImportantContacts() {
   <span>{section}</span>
   <ChevronDown
     size={18}
-    className={`transition-transform ${openSection === section ? 'rotate-180' : ''}`}
+    className={`transition-transform ${(forceOpenSections || openSection === section) ? 'rotate-180' : ''}`}
     style={{ color: SECTION_COLORS[section] || '#C96800' }}
   />
 </button>
 
-            {openSection === section && (
+            {(forceOpenSections || openSection === section) && (
               <div className="space-y-1">
                 {list.map((c, i) => (
                   <div key={i} className="bg-white border border-[#F5E5B0] rounded-xl px-2 py-1 flex items-center gap-3">
