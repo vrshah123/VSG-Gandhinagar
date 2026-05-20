@@ -143,12 +143,6 @@ export default function AddEntry() {
     if (!parseTimeTo24(form.startTime)) return "Start Time is invalid";
     if (!parseTimeTo24(form.endTime)) return "End Time is invalid";
 
-    const normFrom = form.from.toLowerCase().trim();
-    const normVia = (form.via || "").toLowerCase().trim();
-    const normTo = form.to.toLowerCase().trim();
-    // if (normFrom === normTo) return '"From" and "To" cannot be the same';
-    if (normVia && (normVia === normFrom || normVia === normTo)) return '"Via" must be different from "From" and "To"';
-
     const sv = Number(form.sadhviji) || 0;
     const sd = Number(form.sadhu) || 0;
     if (sv === 0 && sd === 0)
