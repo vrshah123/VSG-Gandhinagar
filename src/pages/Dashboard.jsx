@@ -84,7 +84,7 @@ export default function Dashboard() {
         </button>
         {PERMISSIONS.canAddEntry(role) && (
           <Link to="/add" className="flex items-center gap-1 bg-white text-[#C96800] font-bold text-sm px-3 py-2 rounded-xl flex-shrink-0">
-            <Plus size={16} /> Add
+            Add Vihar Report
           </Link>
         )}
       </header>
@@ -250,15 +250,18 @@ function Section({ title, color, children, collapsible = false, isOpen = true, o
           onClick={onToggle}
           aria-expanded={isOpen}
           className="w-full px-4 py-2.5 border-b border-[#F5E5B0] bg-[#FFFDF5] flex items-center justify-between gap-3 text-left"
+           style={{ backgroundColor: color + '18', borderLeft: `4px solid ${color}` }} 
         >
           <span className="font-black text-sm" style={{ color }}>{title}</span>
           <ChevronDown
             size={18}
-            className={`text-[#8B6525] transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            className={` transition-transform ${isOpen ? 'rotate-180' : ''}`}
+             style={{ color }}
           />
         </button>
       ) : (
         <div className="px-4 py-2.5 border-b border-[#F5E5B0] bg-[#FFFDF5]">
+           style={{ backgroundColor: color + '18', borderLeft: `4px solid ${color}` }}
           <p className="font-black text-sm" style={{ color }}>{title}</p>
         </div>
       )}
