@@ -83,8 +83,8 @@ export default function Dashboard() {
           <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
         </button>
         {PERMISSIONS.canAddEntry(role) && (
-          <Link to="/add" className="flex items-center gap-1 bg-white text-[#C96800] font-bold text-sm px-3 py-2 rounded-xl flex-shrink-0">
-            Add Vihar Report
+          <Link to="/add" className="flex items-center gap-1 bg-white text-[#C96800] font-bold text-sm px-2 py-2 rounded-xl flex-shrink-0">
+            Add New Report
           </Link>
         )}
       </header>
