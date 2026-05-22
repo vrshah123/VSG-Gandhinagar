@@ -249,17 +249,17 @@ export default function AddEntry() {
               type="date"
               value={form.date}
               onChange={(e) => set("date", e.target.value)}
-              className={inputCls}
+             className={`${inputCls} min-w-0`}
             />
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 w-full min-w-0">
             <Field label="Start Time" required>
               <div className="space-y-1">
                 <input
                   type="time"
                   value={form.startTime}
                   onChange={(e) => set("startTime", e.target.value)}
-                  className={inputCls}
+                   className={`${inputCls} min-w-0`}
                 />
                 <div className="text-[11px] font-semibold text-[#8B6525]">
                   {normalizeTimeForDisplay(form.startTime)}
@@ -272,7 +272,7 @@ export default function AddEntry() {
                   type="time"
                   value={form.endTime}
                   onChange={(e) => set("endTime", e.target.value)}
-                  className={inputCls}
+                   className={`${inputCls} min-w-0`}
                 />
                 <div className="text-[11px] font-semibold text-[#8B6525]">
                   {normalizeTimeForDisplay(form.endTime)}
@@ -509,7 +509,7 @@ export default function AddEntry() {
 
 function Section({ title, children, accent = "#C96800" }) {
   return (
-    <div className="bg-white border border-[#F5E5B0] rounded-2xl p-4 space-y-3">
+    <div className="bg-white border border-[#F5E5B0] rounded-2xl p-4 space-y-3 overflow-hidden">
       <h3 className="font-black text-sm" style={{ color: accent }}>
         {title}
       </h3>
@@ -535,4 +535,4 @@ function RequiredNote() {
 }
 
 const inputCls =
-  "w-full border border-[#E8C97A] rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-[#C96800]";
+  "w-full min-w-0  border border-[#E8C97A] rounded-xl px-3 py-2.5 text-sm bg-white focus:outline-none focus:border-[#C96800]";
