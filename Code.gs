@@ -11,6 +11,11 @@
 
 const SS = SpreadsheetApp.openById('1tvZ2SVEUYX8dzGg1wZXeTvMZURjxwntOKrECiWqLcEA');
 
+// OAuth Client ID (same as VITE_GOOGLE_CLIENT_ID in the frontend).
+// Recommended: set this as Script Property `GOOGLE_CLIENT_ID` instead of hardcoding.
+// Keeping this here makes copy/paste deployment easier.
+const GOOGLE_CLIENT_ID_FALLBACK = '59223363231-s3q8p0b9flkpuhd4r1qbedbh4c8gu3e2.apps.googleusercontent.com';
+
 const SHEETS = {
   VIHAR:     'Vihar Seva',
   MASTER:    'Master Data',
@@ -254,7 +259,9 @@ function requireNewYearAccess_(idToken) {
 function getActorFromGoogle_(idToken) {
   if (!idToken) throw new Error('Missing idToken');
 
-  const expectedClientId = PropertiesService.getScriptProperties().getProperty('GOOGLE_CLIENT_ID');
+  const expectedClientId =
+    PropertiesService.getScriptProperties().getProperty('GOOGLE_CLIENT_ID') ||
+    GOOGLE_CLIENT_ID_FALLBACK;
   if (!expectedClientId) throw new Error('Server not configured: GOOGLE_CLIENT_ID');
 
   // Validate token with Google
@@ -340,7 +347,8 @@ function rowToEntry(headers, row) {
   return {
     id:           e['ID'],
     viharNo:      e['Vihar No.'],
-    date:         e['Date'] ? Utilities.formatDate(new Date(e['Date']), 'Asia/Kolkata', 'yyyy-MM-dd') : '',
+    // Frontend expects ISO yyyy-MM-dd; sheet stores dd-MM-yyyy (text) for readability.
+    date:         parseDateFromSheet_(e['Date']),
     startTime:    normalizeTime12(formatTimeValue(e['Start Time'])),
     endTime:      normalizeTime12(formatTimeValue(e['End Time'])),
     sadhviji:     e['Sadhviji Bhagvant'],
@@ -361,7 +369,8 @@ function entryToRow(headers, entry) {
   const map = {
     'ID':                  entry.id || '',
     'Vihar No.':           entry.viharNo || '',
-    'Date':                entry.date || '',
+    // Store as dd-MM-yyyy in the sheet (as text to avoid locale reformatting).
+    'Date':                formatDateForSheet_(entry.date),
     // Leading apostrophe forces Sheets to keep this as text
     'Start Time':          entry.startTime ? ("'" + normalizeTime12(entry.startTime)) : '',
     'End Time':            entry.endTime ? ("'" + normalizeTime12(entry.endTime)) : '',
@@ -386,6 +395,58 @@ function formatTimeValue(val) {
   if (typeof val === 'string' && val.startsWith("'")) return val.slice(1);
   if (val instanceof Date) return Utilities.formatDate(val, 'Asia/Kolkata', 'hh:mm a');
   return String(val);
+}
+
+function parseDateFromSheet_(val) {
+  if (!val) return '';
+
+  // Date cell
+  if (val instanceof Date) {
+    return Utilities.formatDate(val, 'Asia/Kolkata', 'yyyy-MM-dd');
+  }
+
+  // Text cell
+  let s = String(val).trim();
+  if (s.startsWith("'")) s = s.slice(1).trim();
+  if (!s) return '';
+
+  // dd-MM-yyyy
+  const ddmmyyyy = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (ddmmyyyy) {
+    const dd = ('0' + Number(ddmmyyyy[1])).slice(-2);
+    const mm = ('0' + Number(ddmmyyyy[2])).slice(-2);
+    const yyyy = ddmmyyyy[3];
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  // yyyy-MM-dd
+  const yyyymmdd = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (yyyymmdd) {
+    const yyyy = yyyymmdd[1];
+    const mm = ('0' + Number(yyyymmdd[2])).slice(-2);
+    const dd = ('0' + Number(yyyymmdd[3])).slice(-2);
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  // Fallback: attempt Date parse, then format to ISO
+  const d = new Date(s);
+  if (!isNaN(d)) return Utilities.formatDate(d, 'Asia/Kolkata', 'yyyy-MM-dd');
+  return '';
+}
+
+function formatDateForSheet_(isoDate) {
+  const iso = String(isoDate || '').trim();
+  if (!iso) return '';
+
+  const m = iso.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!m) return iso;
+
+  const yyyy = m[1];
+  const mm = ('0' + Number(m[2])).slice(-2);
+  const dd = ('0' + Number(m[3])).slice(-2);
+
+  // Leading apostrophe forces Sheets to keep this as text (prevents locale auto-format).
+  return `'${dd}-${mm}-${yyyy}`;
 }
 
 function normalizeTime12(val) {

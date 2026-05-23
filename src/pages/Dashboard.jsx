@@ -1,22 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Plus, RefreshCw, Search, Settings, X } from 'lucide-react';
+import { ChevronDown, Plus, RefreshCw, Search, X } from 'lucide-react';
 import { useSheets } from '../hooks/useSheets';
 import { useAuth } from '../context/AuthContext';
 import { PERMISSIONS } from '../config/sheets';
 import { getMonthKey, getMonthLabel } from '../utils/formatters';
 import { calcMonthStats } from '../utils/reportHelpers';
-import SettingsModal from '../components/SettingsModal';
 import logo from '../assets/VSG Logo.jpeg';
 import sadhviji from '../assets/SadhvijiMs.png';
 import sadhu from '../assets/SadhuMs.png';
 import road from '../assets/TotalKm.jpg';
 import number from '../assets/TotalVihar.png'
 export default function Dashboard() {
-  const { entries, loading, syncAll, scriptUrl, saveScriptUrl } = useSheets();
+  const { entries, loading, syncAll } = useSheets();
   const { fullName, role, ensureWriteAccess } = useAuth();
   const navigate = useNavigate();
-  const [showSettings, setShowSettings] = useState(false);
   const [openRankingPanel, setOpenRankingPanel] = useState('sevak');
   const [rankingSearch, setRankingSearch] = useState('');
   const didInitOpenPanel = useRef(false);
@@ -61,10 +59,6 @@ export default function Dashboard() {
 
   }, [openRankingPanel, hasSevakVisible, hasSevikaVisible, forceOpenRankings]);
 
-  function handleSaveUrl(url) {
-    saveScriptUrl(url);
-  }
-
   return (
     <div className="flex flex-col h-full w-full max-w-[480px] mx-auto bg-[#FFFDF5]">
       {/* Header */}
@@ -74,11 +68,6 @@ export default function Dashboard() {
           <h1 className="text-white font-black text-base leading-tight">Vihar Seva Group , Gandhinagar </h1>
           <p className="text-orange-100 text-xs font-semibold truncate">Welcome, {fullName}</p>
         </div>
-
-        {/* Setting Icon Excel Sheet sync */}
-        {/* <button onClick={() => setShowSettings(true)} className="text-white p-2 rounded-xl hover:bg-orange-700" title="Settings">
-          <Settings size={18} />
-        </button> */}
 
         <button onClick={syncAll} className="text-white p-2 rounded-xl hover:bg-orange-700" title="Sync">
           <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
@@ -195,25 +184,9 @@ export default function Dashboard() {
         {currentMonthEntries.length === 0 && !loading && (
           <div className="text-center py-12">
             <p className="text-[#8B6525] font-semibold text-sm">No entries for {monthLabel} yet.</p>
-            {!scriptUrl && (
-              <button
-                onClick={() => setShowSettings(true)}
-                className="mt-3 text-xs font-bold text-[#C96800] border border-[#C96800] rounded-xl px-4 py-2"
-              >
-                ⚙️ Connect Google Sheets
-              </button>
-            )}
           </div>
         )}
       </div>
-
-      {showSettings && (
-        <SettingsModal
-          currentUrl={scriptUrl}
-          onSave={handleSaveUrl}
-          onClose={() => setShowSettings(false)}
-        />
-      )}
     </div>
   );
 }
