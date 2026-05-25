@@ -136,6 +136,7 @@ export default function AddEntry() {
   const [preview, setPreview] = useState(false);
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState(null);
+  const [dupConfirmSig, setDupConfirmSig] = useState(null);
 
   useEffect(() => {
     syncConfig();
@@ -147,7 +148,40 @@ export default function AddEntry() {
   const viharNo = editEntry?.viharNo ?? nextViharNo;
   const whatsAppMsg = buildWhatsAppMessage({ ...form, viharNo });
 
+  function normText(v) {
+    return String(v || "").trim().toLowerCase();
+  }
+
+  function normList(list) {
+    return (Array.isArray(list) ? list : [])
+      .map(normText)
+      .filter(Boolean)
+      .sort();
+  }
+
+  function dupSignature(f) {
+    return JSON.stringify({
+      date: String(f?.date || ""),
+      from: normText(f?.from),
+      to: normText(f?.to),
+      sadhu: Number(f?.sadhu) || 0,
+      sadhviji: Number(f?.sadhviji) || 0,
+      sevak: normList(f?.sevak),
+      sevika: normList(f?.sevika),
+    });
+  }
+
+  function findDuplicate(sig) {
+    for (const e of entries || []) {
+      if (editEntry && e?.id === editEntry.id) continue;
+      const s = dupSignature(e);
+      if (s === sig) return e;
+    }
+    return null;
+  }
+
   function set(field, value) {
+    setDupConfirmSig(null);
     setForm((f) => ({ ...f, [field]: value }));
   }
 
@@ -194,6 +228,17 @@ export default function AddEntry() {
     const err = validate();
     if (err) {
       setToast({ message: err, type: "error" });
+      return;
+    }
+
+    const sig = dupSignature(form);
+    const dup = findDuplicate(sig);
+    if (dup && dupConfirmSig !== sig) {
+      setDupConfirmSig(sig);
+      setToast({
+        message: `Similar entry already exists (Vihar No. ${dup.viharNo}). Please check, then tap Save again to confirm.`,
+        type: "info",
+      });
       return;
     }
 
