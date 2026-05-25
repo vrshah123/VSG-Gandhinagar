@@ -108,7 +108,7 @@ const DEFAULT_FORM = {
 export default function AddEntry() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { entries, config, saveEntry, nextViharNo, syncConfig } = useSheets();
+  const { entries, config, saveEntry, nextViharNo, syncConfig, syncEntries } = useSheets();
   const { session } = useAuth();
 
   const editEntry = location.state?.entry || null;
@@ -140,6 +140,7 @@ export default function AddEntry() {
 
   useEffect(() => {
     syncConfig();
+    syncEntries();
   }, []);
 
   const places = config?.places || [];
@@ -171,8 +172,8 @@ export default function AddEntry() {
     });
   }
 
-  function findDuplicate(sig) {
-    for (const e of entries || []) {
+  function findDuplicate(sig, list) {
+    for (const e of list || []) {
       if (editEntry && e?.id === editEntry.id) continue;
       const s = dupSignature(e);
       if (s === sig) return e;
@@ -231,8 +232,18 @@ export default function AddEntry() {
       return;
     }
 
+    // Make sure we have the latest entries before checking duplicates.
+    // Use the returned list (not state) to avoid timing issues with React state updates.
+    let latestEntries = entries;
+    try {
+      const fresh = await syncEntries();
+      if (Array.isArray(fresh)) latestEntries = fresh;
+    } catch {
+      // ignore sync errors; fall back to cached entries
+    }
+
     const sig = dupSignature(form);
-    const dup = findDuplicate(sig);
+    const dup = findDuplicate(sig, latestEntries);
     if (dup && dupConfirmSig !== sig) {
       setDupConfirmSig(sig);
       setToast({

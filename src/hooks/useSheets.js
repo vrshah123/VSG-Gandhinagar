@@ -33,8 +33,10 @@ export function useSheets() {
       const list = Array.isArray(data) ? data : (data.data || []);
       setEntries(list);
       localStorage.setItem(ENTRIES_KEY, JSON.stringify(list));
+      return list;
     } catch (e) {
       setError(e.message);
+      return null;
     } finally {
       setLoading(false);
     }

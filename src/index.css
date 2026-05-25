@@ -50,5 +50,10 @@ button {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px));
+}
+
+/* iOS: time inputs can clip the native control; give extra right padding. */
+input[type="time"] {
+  padding-right: 44px;
 }
