@@ -136,7 +136,6 @@ export default function AddEntry() {
   const [preview, setPreview] = useState(false);
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState(null);
-  const [dupConfirmSig, setDupConfirmSig] = useState(null);
 
   useEffect(() => {
     syncConfig();
@@ -182,7 +181,6 @@ export default function AddEntry() {
   }
 
   function set(field, value) {
-    setDupConfirmSig(null);
     setForm((f) => ({ ...f, [field]: value }));
   }
 
@@ -244,11 +242,10 @@ export default function AddEntry() {
 
     const sig = dupSignature(form);
     const dup = findDuplicate(sig, latestEntries);
-    if (dup && dupConfirmSig !== sig) {
-      setDupConfirmSig(sig);
+    if (dup) {
       setToast({
-        message: `Similar entry already exists (Vihar No. ${dup.viharNo}). Please check, then tap Save again to confirm.`,
-        type: "info",
+        message: `Similar entry already exists (Vihar No. ${dup.viharNo}). Please check and edit instead of saving a duplicate.`,
+        type: "error",
       });
       return;
     }
