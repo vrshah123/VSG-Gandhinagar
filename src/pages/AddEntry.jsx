@@ -213,8 +213,9 @@ export default function AddEntry() {
         savedBy: session.email || session.username || '',
         savedAt: new Date().toISOString(),
       };
-      await saveEntry(entry);
-      navigate("/confirm", { state: { entry } });
+      const res = await saveEntry(entry);
+      const finalEntry = res?.viharNo ? { ...entry, viharNo: res.viharNo } : entry;
+      navigate("/confirm", { state: { entry: finalEntry } });
     } catch (e) {
       setToast({ message: e.message || "Save failed", type: "error" });
     } finally {

@@ -30,6 +30,7 @@ const VIHAR_HEADERS = [
 // ── Entry point ─────────────────────────────────────────────────────────────
 
 function doGet(e) {
+  e = e || { parameter: {} };
   const action = e.parameter.action;
   let result;
 
@@ -67,22 +68,48 @@ function getAll() {
 
 function saveEntry(dataStr) {
   const entry = JSON.parse(dataStr);
-  const sheet = getOrCreateViharSheet();
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
+  const lock = LockService.getScriptLock();
 
-  // Look for existing row by ID
-  const idCol = headers.indexOf('ID');
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][idCol] === entry.id) {
-      sheet.getRange(i + 1, 1, 1, headers.length).setValues([entryToRow(headers, entry)]);
-      return { success: true, action: 'updated' };
+  // Prevent concurrent inserts generating the same Vihar No.
+  lock.waitLock(30 * 1000);
+  try {
+    const sheet = getOrCreateViharSheet();
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0];
+
+    const idCol = headers.indexOf('ID');
+    const viharNoCol = headers.indexOf('Vihar No.');
+
+    // Update existing row by ID (keep original Vihar No.)
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][idCol] === entry.id) {
+        if (viharNoCol !== -1) entry.viharNo = rows[i][viharNoCol];
+        sheet.getRange(i + 1, 1, 1, headers.length).setValues([entryToRow(headers, entry)]);
+        return { success: true, action: 'updated', viharNo: entry.viharNo };
+      }
     }
-  }
 
-  // New row
-  sheet.appendRow(entryToRow(headers, entry));
-  return { success: true, action: 'inserted' };
+    // New row: assign next available Vihar No. on the server (first-come-first-serve).
+    const next = getNextViharNo_(rows, viharNoCol);
+    entry.viharNo = next;
+
+    sheet.appendRow(entryToRow(headers, entry));
+    return { success: true, action: 'inserted', viharNo: entry.viharNo };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getNextViharNo_(rows, viharNoCol) {
+  if (viharNoCol === -1) throw new Error('Vihar sheet missing "Vihar No." column');
+
+  let maxNo = 0;
+  for (let i = 1; i < rows.length; i++) {
+    const raw = rows[i][viharNoCol];
+    const num = Number(raw);
+    if (Number.isFinite(num) && num > maxNo) maxNo = num;
+  }
+  return maxNo + 1;
 }
 
 // ── deleteEntry ──────────────────────────────────────────────────────────────
@@ -232,7 +259,8 @@ function rowToEntry(headers, row) {
   return {
     id:           e['ID'],
     viharNo:      e['Vihar No.'],
-    date:         e['Date'] ? Utilities.formatDate(new Date(e['Date']), 'Asia/Kolkata', 'yyyy-MM-dd') : '',
+    // Frontend expects ISO yyyy-MM-dd; sheet stores dd-MM-yyyy (text) for readability.
+    date:         parseDateFromSheet_(e['Date']),
     startTime:    normalizeTime12(formatTimeValue(e['Start Time'])),
     endTime:      normalizeTime12(formatTimeValue(e['End Time'])),
     sadhviji:     e['Sadhviji Bhagvant'],
@@ -253,7 +281,8 @@ function entryToRow(headers, entry) {
   const map = {
     'ID':                  entry.id || '',
     'Vihar No.':           entry.viharNo || '',
-    'Date':                entry.date || '',
+    // Store as dd-MM-yyyy in the sheet (as text to avoid locale reformatting).
+    'Date':                formatDateForSheet_(entry.date),
     // Leading apostrophe forces Sheets to keep this as text
     'Start Time':          entry.startTime ? ("'" + normalizeTime12(entry.startTime)) : '',
     'End Time':            entry.endTime ? ("'" + normalizeTime12(entry.endTime)) : '',
@@ -278,6 +307,58 @@ function formatTimeValue(val) {
   if (typeof val === 'string' && val.startsWith("'")) return val.slice(1);
   if (val instanceof Date) return Utilities.formatDate(val, 'Asia/Kolkata', 'hh:mm a');
   return String(val);
+}
+
+function parseDateFromSheet_(val) {
+  if (!val) return '';
+
+  // Date cell
+  if (val instanceof Date) {
+    return Utilities.formatDate(val, 'Asia/Kolkata', 'yyyy-MM-dd');
+  }
+
+  // Text cell
+  let s = String(val).trim();
+  if (s.startsWith("'")) s = s.slice(1).trim();
+  if (!s) return '';
+
+  // dd-MM-yyyy
+  const ddmmyyyy = s.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (ddmmyyyy) {
+    const dd = ('0' + Number(ddmmyyyy[1])).slice(-2);
+    const mm = ('0' + Number(ddmmyyyy[2])).slice(-2);
+    const yyyy = ddmmyyyy[3];
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  // yyyy-MM-dd
+  const yyyymmdd = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (yyyymmdd) {
+    const yyyy = yyyymmdd[1];
+    const mm = ('0' + Number(yyyymmdd[2])).slice(-2);
+    const dd = ('0' + Number(yyyymmdd[3])).slice(-2);
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  // Fallback: attempt Date parse, then format to ISO
+  const d = new Date(s);
+  if (!isNaN(d)) return Utilities.formatDate(d, 'Asia/Kolkata', 'yyyy-MM-dd');
+  return '';
+}
+
+function formatDateForSheet_(isoDate) {
+  const iso = String(isoDate || '').trim();
+  if (!iso) return '';
+
+  const m = iso.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!m) return iso;
+
+  const yyyy = m[1];
+  const mm = ('0' + Number(m[2])).slice(-2);
+  const dd = ('0' + Number(m[3])).slice(-2);
+
+  // Leading apostrophe forces Sheets to keep this as text (prevents locale auto-format).
+  return `'${dd}-${mm}-${yyyy}`;
 }
 
 function normalizeTime12(val) {
