@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 /**
  * strict=true: if the user types but doesn't select from the dropdown,
@@ -18,6 +18,7 @@ export default function AutoComplete({
   const [open, setOpen] = useState(false);
   const [filtered, setFiltered] = useState([]);
   const [invalid, setInvalid] = useState(false);
+  const gestureRef = useRef({ pointerId: null, startY: 0, moved: false });
 
   function handleInputChange(e) {
     const val = e.target.value;
@@ -37,6 +38,32 @@ export default function AutoComplete({
     onChange(val);
     setOpen(false);
     setInvalid(false);
+  }
+
+  function handleOptionPointerDown(e) {
+    // For mouse, prevent input blur before selection. For touch, allow native scrolling.
+    if (e.pointerType === 'mouse') e.preventDefault();
+    gestureRef.current = { pointerId: e.pointerId, startY: e.clientY, moved: false };
+  }
+
+  function handleListPointerMove(e) {
+    const g = gestureRef.current;
+    if (g.pointerId !== e.pointerId) return;
+    if (Math.abs(e.clientY - g.startY) > 6) gestureRef.current.moved = true;
+  }
+
+  function handleOptionPointerUp(e, val) {
+    const g = gestureRef.current;
+    if (g.pointerId !== e.pointerId) return;
+    const shouldPick = !g.moved;
+    gestureRef.current = { pointerId: null, startY: 0, moved: false };
+    if (shouldPick) pick(val);
+  }
+
+  function clearGesture(e) {
+    const g = gestureRef.current;
+    if (g.pointerId !== e.pointerId) return;
+    gestureRef.current = { pointerId: null, startY: 0, moved: false };
   }
 
   function handleBlur() {
@@ -69,12 +96,18 @@ export default function AutoComplete({
         <p className="text-[10px] text-red-500 mt-0.5 px-1">Please select from the list</p>
       )}
       {open && filtered.length > 0 && (
-        <ul className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-[#E8C97A] rounded-xl shadow-lg max-h-48 overflow-y-auto">
+        <ul
+          className="absolute z-50 left-0 right-0 top-full mt-1 bg-white border border-[#E8C97A] rounded-xl shadow-lg max-h-48 overflow-y-auto overscroll-contain"
+          style={{ touchAction: 'pan-y' }}
+          onPointerMove={handleListPointerMove}
+          onPointerCancel={clearGesture}
+        >
           {filtered.map(s => (
             <li
               key={s}
-              onMouseDown={e => { e.preventDefault(); pick(s); }}
-              onTouchStart={e => { e.preventDefault(); pick(s); }}
+              onPointerDown={handleOptionPointerDown}
+              onPointerUp={e => handleOptionPointerUp(e, s)}
+              onPointerCancel={clearGesture}
               className="px-3 py-2.5 text-sm cursor-pointer hover:bg-[#FFF3D6] text-[#3D1F00]"
             >
               {s}

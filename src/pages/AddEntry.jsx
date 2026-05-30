@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronLeft, Copy, Check } from "lucide-react";
 import { useSheets } from "../hooks/useSheets";
@@ -133,6 +133,7 @@ export default function AddEntry() {
       : DEFAULT_FORM,
   );
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [preview, setPreview] = useState(false);
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState(null);
@@ -224,34 +225,36 @@ export default function AddEntry() {
   }
 
   async function handleSave() {
-    const err = validate();
-    if (err) {
-      setToast({ message: err, type: "error" });
-      return;
-    }
-
-    // Make sure we have the latest entries before checking duplicates.
-    // Use the returned list (not state) to avoid timing issues with React state updates.
-    let latestEntries = entries;
-    try {
-      const fresh = await syncEntries();
-      if (Array.isArray(fresh)) latestEntries = fresh;
-    } catch {
-      // ignore sync errors; fall back to cached entries
-    }
-
-    const sig = dupSignature(form);
-    const dup = findDuplicate(sig, latestEntries);
-    if (dup) {
-      setToast({
-        message: `Similar entry already exists (Vihar No. ${dup.viharNo}). Please check and edit instead of saving a duplicate.`,
-        type: "error",
-      });
-      return;
-    }
-
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
+      const err = validate();
+      if (err) {
+        setToast({ message: err, type: "error" });
+        return;
+      }
+
+      // Make sure we have the latest entries before checking duplicates.
+      // Use the returned list (not state) to avoid timing issues with React state updates.
+      let latestEntries = entries;
+      try {
+        const fresh = await syncEntries();
+        if (Array.isArray(fresh)) latestEntries = fresh;
+      } catch {
+        // ignore sync errors; fall back to cached entries
+      }
+
+      const sig = dupSignature(form);
+      const dup = findDuplicate(sig, latestEntries);
+      if (dup) {
+        setToast({
+          message: `Similar entry already exists (Vihar No. ${dup.viharNo}). Please check and edit instead of saving a duplicate.`,
+          type: "error",
+        });
+        return;
+      }
+
       const startTime24 = parseTimeTo24(form.startTime);
       const endTime24 = parseTimeTo24(form.endTime);
       const entry = {
@@ -272,6 +275,7 @@ export default function AddEntry() {
     } catch (e) {
       setToast({ message: e.message || "Save failed", type: "error" });
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
