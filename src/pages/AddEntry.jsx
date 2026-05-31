@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronLeft, Copy, Check } from "lucide-react";
 import { useSheets } from "../hooks/useSheets";
@@ -9,6 +9,28 @@ import ListInput from "../components/ListInput";
 import Toast from "../components/Toast";
 import sadhviji from "../assets/SadhvijiMs.png";
 import sadhu from "../assets/SadhuMs.png";
+
+function parseTimeForInput(val) {
+  if (!val) return "";
+  if (typeof val === "string" && val.includes("T")) {
+    const d = new Date(val);
+    if (!isNaN(d))
+      return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+  }
+
+  if (typeof val === "string") {
+    const m = val.trim().match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
+    if (m) {
+      let hours = Number(m[1]);
+      const minutes = Number(m[2]);
+      const ampm = m[3].toUpperCase();
+      if (hours === 12) hours = 0;
+      if (ampm === "PM") hours += 12;
+      return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+    }
+  }
+  return String(val);
+}
 
 function to12HourTime(value) {
   if (!value) return "";
@@ -68,16 +90,10 @@ function normalizeTimeForDisplay(value) {
   return to12HourTime(hhmm);
 }
 
-function coerceTimeOnBlur(raw, fallback) {
-  const hhmm = parseTimeTo24(raw);
-  if (!hhmm) return fallback;
-  return to12HourTime(hhmm);
-}
-
 const DEFAULT_FORM = {
   date: todayISO(),
-  startTime: "04:45 AM",
-  endTime: "07:45 AM",
+  startTime: "",
+  endTime: "",
   sadhviji: "",
   sadhu: "",
   maharajNames: [""],
@@ -92,8 +108,8 @@ const DEFAULT_FORM = {
 export default function AddEntry() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { entries, config, saveEntry, nextViharNo, syncConfig } = useSheets();
-  const { session, ensureWriteAccess } = useAuth();
+  const { entries, config, saveEntry, nextViharNo, syncConfig, syncEntries } = useSheets();
+  const { session } = useAuth();
 
   const editEntry = location.state?.entry || null;
 
@@ -103,10 +119,10 @@ export default function AddEntry() {
           ...DEFAULT_FORM,
           ...editEntry,
           startTime:
-            normalizeTimeForDisplay(editEntry.startTime) ||
+            parseTimeForInput(editEntry.startTime) ||
             DEFAULT_FORM.startTime,
           endTime:
-            normalizeTimeForDisplay(editEntry.endTime) || DEFAULT_FORM.endTime,
+            parseTimeForInput(editEntry.endTime) || DEFAULT_FORM.endTime,
           // maharajNames: editEntry.maharajNames || [],
           maharajNames: editEntry.maharajNames?.length
             ? editEntry.maharajNames
@@ -117,12 +133,14 @@ export default function AddEntry() {
       : DEFAULT_FORM,
   );
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [preview, setPreview] = useState(false);
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
     syncConfig();
+    syncEntries();
   }, []);
 
   useEffect(() => {
@@ -134,6 +152,38 @@ export default function AddEntry() {
   const sevikaNames = config?.sevikaNames || [];
   const viharNo = editEntry?.viharNo ?? nextViharNo;
   const whatsAppMsg = buildWhatsAppMessage({ ...form, viharNo });
+
+  function normText(v) {
+    return String(v || "").trim().toLowerCase();
+  }
+
+  function normList(list) {
+    return (Array.isArray(list) ? list : [])
+      .map(normText)
+      .filter(Boolean)
+      .sort();
+  }
+
+  function dupSignature(f) {
+    return JSON.stringify({
+      date: String(f?.date || ""),
+      from: normText(f?.from),
+      to: normText(f?.to),
+      sadhu: Number(f?.sadhu) || 0,
+      sadhviji: Number(f?.sadhviji) || 0,
+      sevak: normList(f?.sevak),
+      sevika: normList(f?.sevika),
+    });
+  }
+
+  function findDuplicate(sig, list) {
+    for (const e of list || []) {
+      if (editEntry && e?.id === editEntry.id) continue;
+      const s = dupSignature(e);
+      if (s === sig) return e;
+    }
+    return null;
+  }
 
   function set(field, value) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -179,14 +229,36 @@ export default function AddEntry() {
   }
 
   async function handleSave() {
-    const err = validate();
-    if (err) {
-      setToast({ message: err, type: "error" });
-      return;
-    }
-
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     try {
+      const err = validate();
+      if (err) {
+        setToast({ message: err, type: "error" });
+        return;
+      }
+
+      // Make sure we have the latest entries before checking duplicates.
+      // Use the returned list (not state) to avoid timing issues with React state updates.
+      let latestEntries = entries;
+      try {
+        const fresh = await syncEntries();
+        if (Array.isArray(fresh)) latestEntries = fresh;
+      } catch {
+        // ignore sync errors; fall back to cached entries
+      }
+
+      const sig = dupSignature(form);
+      const dup = findDuplicate(sig, latestEntries);
+      if (dup) {
+        setToast({
+          message: `Similar entry already exists (Vihar No. ${dup.viharNo}). Please check and edit instead of saving a duplicate.`,
+          type: "error",
+        });
+        return;
+      }
+
       const startTime24 = parseTimeTo24(form.startTime);
       const endTime24 = parseTimeTo24(form.endTime);
       const entry = {
@@ -201,11 +273,13 @@ export default function AddEntry() {
         savedBy: session.email || session.username || '',
         savedAt: new Date().toISOString(),
       };
-      await saveEntry(entry);
-      navigate("/confirm", { state: { entry } });
+      const res = await saveEntry(entry);
+      const finalEntry = res?.viharNo ? { ...entry, viharNo: res.viharNo } : entry;
+      navigate("/confirm", { state: { entry: finalEntry } });
     } catch (e) {
       setToast({ message: e.message || "Save failed", type: "error" });
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -242,28 +316,32 @@ export default function AddEntry() {
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Start Time" required>
-              <input
-                type="text"
-                value={form.startTime}
-                onChange={(e) => set("startTime", e.target.value)}
-                onBlur={(e) =>
-                  set("startTime", coerceTimeOnBlur(e.target.value, form.startTime))
-                }
-                placeholder="hh:mm AM/PM"
-                className={inputCls}
-              />
+              <div className="space-y-1">
+                <input
+                  type="time"
+                  value={form.startTime}
+                  onChange={(e) => set("startTime", e.target.value)}
+                  placeholder="Start Time"
+                  className={inputCls}
+                />
+                <div className="text-[11px] font-semibold text-[#8B6525]">
+                  {normalizeTimeForDisplay(form.startTime)}
+                </div>
+              </div>
             </Field>
             <Field label="End Time" required>
-              <input
-                type="text"
-                value={form.endTime}
-                onChange={(e) => set("endTime", e.target.value)}
-                onBlur={(e) =>
-                  set("endTime", coerceTimeOnBlur(e.target.value, form.endTime))
-                }
-                placeholder="hh:mm AM/PM"
-                className={inputCls}
-              />
+              <div className="space-y-1">
+                <input
+                  type="time"
+                  value={form.endTime}
+                  onChange={(e) => set("endTime", e.target.value)}
+                  placeholder="End Time"
+                  className={inputCls}
+                />
+                <div className="text-[11px] font-semibold text-[#8B6525]">
+                  {normalizeTimeForDisplay(form.endTime)}
+                </div>
+              </div>
             </Field>
           </div>
         </Section>

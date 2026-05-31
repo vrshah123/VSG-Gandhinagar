@@ -45,8 +45,10 @@ export function useSheets() {
       const list = Array.isArray(data) ? data : (data.data || []);
       setEntries(list);
       localStorage.setItem(ENTRIES_KEY, JSON.stringify(list));
+      return list;
     } catch (e) {
       setError(e.message);
+      return null;
     } finally {
       setLoading(false);
     }
@@ -77,13 +79,14 @@ export function useSheets() {
   }, [scriptUrl]);
 
   const saveEntry = useCallback(async (entry) => {
-    const data = await api({ action: 'save', data: JSON.stringify(entry), idToken: getIdToken() });
+    const data = await api({ action: 'save', data: JSON.stringify(entry) });
+    const canonical = data?.viharNo ? { ...entry, viharNo: data.viharNo } : entry;
     // Update local cache directly — avoids a second getAll round-trip after every save
     setEntries(prev => {
-      const exists = prev.some(e => e.id === entry.id);
+      const exists = prev.some(e => e.id === canonical.id);
       const next = exists
-        ? prev.map(e => e.id === entry.id ? entry : e)
-        : [...prev, entry];
+        ? prev.map(e => e.id === canonical.id ? canonical : e)
+        : [...prev, canonical];
       localStorage.setItem(ENTRIES_KEY, JSON.stringify(next));
       return next;
     });

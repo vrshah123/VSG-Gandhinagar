@@ -66,11 +66,11 @@ export default function Reports() {
                   <table className="w-full text-xs">
                     <thead>
                       <tr className="bg-[#FFF3D6]">
-                        <th className="text-left px-3 py-2.5 font-black text-[#8B6525]">Month</th>
-                        <th className="px-3 py-2.5 font-black text-[#8B6525] text-center">Total Vihar</th>
-                        <th className="px-3 py-2.5 font-black text-[#8B6525] text-center">Total  Distance (KM)</th>
-                        <th className="px-3 py-2.5 font-black text-[#8B6525] text-center">Total  Sadhu Bhagvant</th>
-                        <th className="px-3 py-2.5 font-black text-[#8B6525] text-center">Total  Sadhviji Bhagvant</th>
+                        <th className="text-left px-5 py-2 font-black text-[#8B6525] text-center">Month</th>
+                        <th className="px-1 py-2 font-black text-[#8B6525] text-center">Total Vihar</th>
+                        <th className="px-1 py-2 font-black text-[#8B6525] text-center">Total Distance (KM)</th>
+                        <th className="px-1 py-2 font-black text-[#8B6525] text-center">Total Sadhu Bhagvant</th>
+                        <th className="px-1 py-2 font-black text-[#8B6525] text-center">Total Sadhviji Bhagvant</th>
                       </tr>
                     </thead>
                     <tbody>

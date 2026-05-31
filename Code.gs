@@ -47,6 +47,7 @@ const VIHAR_HEADERS = [
 // ── Entry point ─────────────────────────────────────────────────────────────
 
 function doGet(e) {
+  e = e || { parameter: {} };
   const action = e.parameter.action;
   let result;
 
@@ -87,9 +88,7 @@ function getAll() {
 function saveEntry(dataStr, idToken) {
   const actor = requireWriteAccess_(idToken);
   const entry = JSON.parse(dataStr);
-  const sheet = getOrCreateViharSheet();
-  const rows = sheet.getDataRange().getValues();
-  const headers = rows[0];
+  const lock = LockService.getScriptLock();
 
   // Never trust client-supplied savedBy / savedAt
   entry.savedBy = actor.email || '';
@@ -101,12 +100,46 @@ function saveEntry(dataStr, idToken) {
     if (rows[i][idCol] === entry.id) {
       sheet.getRange(i + 1, 1, 1, headers.length).setValues([entryToRow(headers, entry)]);
       return { success: true, action: 'updated' };
-    }
-  }
+  // Prevent concurrent inserts generating the same Vihar No.
+  lock.waitLock(30 * 1000);
+  try {
+    const sheet = getOrCreateViharSheet();
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0];
 
-  // New row
-  sheet.appendRow(entryToRow(headers, entry));
-  return { success: true, action: 'inserted' };
+    const idCol = headers.indexOf('ID');
+    const viharNoCol = headers.indexOf('Vihar No.');
+
+    // Update existing row by ID (keep original Vihar No.)
+    for (let i = 1; i < rows.length; i++) {
+      if (rows[i][idCol] === entry.id) {
+        if (viharNoCol !== -1) entry.viharNo = rows[i][viharNoCol];
+        sheet.getRange(i + 1, 1, 1, headers.length).setValues([entryToRow(headers, entry)]);
+        return { success: true, action: 'updated', viharNo: entry.viharNo };
+      }
+    }
+
+    // New row: assign next available Vihar No. on the server (first-come-first-serve).
+    const next = getNextViharNo_(rows, viharNoCol);
+    entry.viharNo = next;
+
+    sheet.appendRow(entryToRow(headers, entry));
+    return { success: true, action: 'inserted', viharNo: entry.viharNo };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function getNextViharNo_(rows, viharNoCol) {
+  if (viharNoCol === -1) throw new Error('Vihar sheet missing "Vihar No." column');
+
+  let maxNo = 0;
+  for (let i = 1; i < rows.length; i++) {
+    const raw = rows[i][viharNoCol];
+    const num = Number(raw);
+    if (Number.isFinite(num) && num > maxNo) maxNo = num;
+  }
+  return maxNo + 1;
 }
 
 // ── deleteEntry ──────────────────────────────────────────────────────────────

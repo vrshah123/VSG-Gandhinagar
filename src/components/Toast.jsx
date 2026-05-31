@@ -9,7 +9,7 @@ const ICONS = {
 
 export default function Toast({ message, type = 'info', onClose }) {
   useEffect(() => {
-    const t = setTimeout(onClose, 3000);
+    const t = setTimeout(onClose, 9000);
     return () => clearTimeout(t);
   }, [onClose]);
 
