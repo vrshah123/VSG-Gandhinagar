@@ -94,7 +94,8 @@ export function useSheets() {
   }, [scriptUrl]);
 
   const saveEntry = useCallback(async (entry) => {
-    const data = await api({ action: 'save', data: JSON.stringify(entry) });
+    const data = await api({ action: 'save', data: JSON.stringify(entry), idToken: getIdToken() });
+    if (data?.error) throw new Error(data.error);
     const canonical = data?.viharNo ? { ...entry, viharNo: data.viharNo } : entry;
     // Update local cache directly — avoids a second getAll round-trip after every save
     setEntries(prev => {
