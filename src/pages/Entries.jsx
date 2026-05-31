@@ -20,7 +20,7 @@ import Toast from "../components/Toast";
 
 export default function Entries() {
   const { entries, loading, syncEntries, deleteEntry } = useSheets();
-  const { role } = useAuth();
+  const { role, ensureWriteAccess } = useAuth();
   const navigate = useNavigate();
   const [expanded, setExpanded] = useState(null);
   const [search, setSearch] = useState("");
@@ -160,6 +160,15 @@ export default function Entries() {
                     className="flex-1 flex items-center justify-center gap-1.5 bg-[#25D366] text-white font-bold rounded-xl py-2.5 text-xs"
                   >
                     <Copy size={14} /> Copy
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!PERMISSIONS.canEditEntry(role)) await ensureWriteAccess();
+                      navigate('/add', { state: { entry } });
+                    }}
+                    className="flex items-center justify-center gap-1 bg-[#E8C97A] text-[#3D1F00] font-bold rounded-xl py-2.5 px-3 text-xs"
+                  >
+                    <Pencil size={14} />
                   </button>
                   {PERMISSIONS.canEditEntry(role) && (
                     <button

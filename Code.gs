@@ -11,12 +11,29 @@
 
 const SS = SpreadsheetApp.openById('1tvZ2SVEUYX8dzGg1wZXeTvMZURjxwntOKrECiWqLcEA');
 
+// OAuth Client ID (same as VITE_GOOGLE_CLIENT_ID in the frontend).
+// Recommended: set this as Script Property `GOOGLE_CLIENT_ID` instead of hardcoding.
+// Keeping this here makes copy/paste deployment easier.
+const GOOGLE_CLIENT_ID_FALLBACK = '59223363231-s3q8p0b9flkpuhd4r1qbedbh4c8gu3e2.apps.googleusercontent.com';
+
 const SHEETS = {
   VIHAR:     'Vihar Seva',
   MASTER:    'Master Data',
   USERS:     'Users',
   CONTACTS:  'Important Contacts',
   CONFIG:    'App Config',
+};
+
+const ROLES = {
+  ADMIN: 'admin',
+  CAPTAIN: 'captain',
+  USER: 'user',
+};
+
+const PERMISSIONS = {
+  canWrite: (role) => role === ROLES.ADMIN || role === ROLES.CAPTAIN,
+  canDelete: (role) => role === ROLES.ADMIN,
+  canNewYear: (role) => role === ROLES.ADMIN,
 };
 
 const VIHAR_HEADERS = [
@@ -27,6 +44,22 @@ const VIHAR_HEADERS = [
   'Saved At', 'Deleted', 'Saved By',
 ];
 
+// ── One-time authorization helper ────────────────────────────────────────────
+// If you see: "You do not have permission to call UrlFetchApp.fetch",
+// open Apps Script editor and run `authorize()` once (as the script owner),
+// then redeploy the Web App (New version).
+function authorize() {
+  // Touch spreadsheet scope
+  SpreadsheetApp.getActiveSpreadsheet();
+
+  // Touch external request scope (required for Google tokeninfo validation)
+  UrlFetchApp.fetch('https://oauth2.googleapis.com/tokeninfo?id_token=invalid', {
+    muteHttpExceptions: true,
+  });
+
+  return { ok: true };
+}
+
 // ── Entry point ─────────────────────────────────────────────────────────────
 
 function doGet(e) {
@@ -36,11 +69,14 @@ function doGet(e) {
 
   try {
     if      (action === 'getAll')    result = getAll();
-    else if (action === 'save')      result = saveEntry(e.parameter.data);
-    else if (action === 'delete')    result = deleteEntry(e.parameter.id);
+    else if (action === 'save')      result = saveEntry(e.parameter.data, e.parameter.idToken);
+    else if (action === 'delete')    result = deleteEntry(e.parameter.id, e.parameter.idToken);
     else if (action === 'getConfig') result = getConfig();
     else if (action === 'login')     result = login(e.parameter.username, e.parameter.password);
-    else if (action === 'newYear')   result = newYear(e.parameter.year);
+    else if (action === 'googleLogin') result = googleLogin(e.parameter.idToken);
+    else if (action === 'newYear')   result = newYear(e.parameter.year, e.parameter.idToken);
+    else if (action === 'ping')      result = { ok: true, at: new Date().toISOString() };
+    else if (action === 'authorize') result = authorize();
     else                             result = { error: 'Unknown action: ' + action };
   } catch (err) {
     result = { error: err.message };
@@ -66,8 +102,9 @@ function getAll() {
 
 // ── saveEntry ────────────────────────────────────────────────────────────────
 
-function saveEntry(dataStr) {
-  const entry = JSON.parse(dataStr);
+function saveEntry(dataStr, idToken) {
+  const actor = requireWriteAccess_(idToken);
+  const entry = JSON.parse(dataStr || '{}');
   const lock = LockService.getScriptLock();
 
   // Prevent concurrent inserts generating the same Vihar No.
@@ -77,8 +114,13 @@ function saveEntry(dataStr) {
     const rows = sheet.getDataRange().getValues();
     const headers = rows[0];
 
+    // Never trust client-supplied savedBy / savedAt
+    entry.savedBy = actor.email || '';
+    entry.savedAt = new Date().toISOString();
+
     const idCol = headers.indexOf('ID');
     const viharNoCol = headers.indexOf('Vihar No.');
+    if (idCol === -1) throw new Error('Vihar sheet missing "ID" column');
 
     // Update existing row by ID (keep original Vihar No.)
     for (let i = 1; i < rows.length; i++) {
@@ -114,16 +156,21 @@ function getNextViharNo_(rows, viharNoCol) {
 
 // ── deleteEntry ──────────────────────────────────────────────────────────────
 
-function deleteEntry(id) {
+function deleteEntry(id, idToken) {
+  const actor = requireDeleteAccess_(idToken);
   const sheet = getOrCreateViharSheet();
   const rows = sheet.getDataRange().getValues();
   const headers = rows[0];
   const idCol = headers.indexOf('ID');
   const delCol = headers.indexOf('Deleted');
+  const byCol = headers.indexOf('Saved By');
+  const atCol = headers.indexOf('Saved At');
 
   for (let i = 1; i < rows.length; i++) {
     if (rows[i][idCol] === id) {
       sheet.getRange(i + 1, delCol + 1).setValue(true);
+      if (byCol !== -1) sheet.getRange(i + 1, byCol + 1).setValue(actor.email || '');
+      if (atCol !== -1) sheet.getRange(i + 1, atCol + 1).setValue(new Date().toISOString());
       return { success: true };
     }
   }
@@ -207,7 +254,8 @@ function login(username, password) {
 
 // ── newYear ──────────────────────────────────────────────────────────────────
 
-function newYear(year) {
+function newYear(year, idToken) {
+  requireNewYearAccess_(idToken);
   const sheet = getOrCreateViharSheet();
   const archiveName = SHEETS.VIHAR + ' ' + year;
 
@@ -221,6 +269,95 @@ function newYear(year) {
   }
 
   return { success: true, archived: archiveName };
+}
+
+// ── Google Auth (write gate) ──────────────────────────────────────────────────
+
+function googleLogin(idToken) {
+  const actor = requireWriteAccess_(idToken);
+  return {
+    success: true,
+    email: actor.email,
+    role: actor.role,
+    fullName: actor.fullName || actor.email,
+  };
+}
+
+function requireWriteAccess_(idToken) {
+  const actor = getActorFromGoogle_(idToken);
+  if (!PERMISSIONS.canWrite(actor.role)) throw new Error('Not authorized');
+  return actor;
+}
+
+function requireDeleteAccess_(idToken) {
+  const actor = getActorFromGoogle_(idToken);
+  if (!PERMISSIONS.canDelete(actor.role)) throw new Error('Not authorized');
+  return actor;
+}
+
+function requireNewYearAccess_(idToken) {
+  const actor = getActorFromGoogle_(idToken);
+  if (!PERMISSIONS.canNewYear(actor.role)) throw new Error('Not authorized');
+  return actor;
+}
+
+function getActorFromGoogle_(idToken) {
+  if (!idToken) throw new Error('Missing idToken');
+
+  const expectedClientId =
+    PropertiesService.getScriptProperties().getProperty('GOOGLE_CLIENT_ID') ||
+    GOOGLE_CLIENT_ID_FALLBACK;
+  if (!expectedClientId) throw new Error('Server not configured: GOOGLE_CLIENT_ID');
+
+  // Validate token with Google
+  const resp = UrlFetchApp.fetch('https://oauth2.googleapis.com/tokeninfo?id_token=' + encodeURIComponent(idToken), {
+    muteHttpExceptions: true,
+  });
+  if (resp.getResponseCode() !== 200) throw new Error('Invalid Google token');
+
+  const info = JSON.parse(resp.getContentText() || '{}');
+  if (info.aud !== expectedClientId) throw new Error('Invalid token audience');
+  if (!info.email) throw new Error('Google token missing email');
+  if (String(info.email_verified).toLowerCase() !== 'true') throw new Error('Email not verified');
+
+  const user = getUserByEmail_(info.email);
+  if (!user) throw new Error('User not allowed');
+
+  return user;
+}
+
+function getUserByEmail_(email) {
+  const sheet = SS.getSheetByName(SHEETS.USERS);
+  if (!sheet) throw new Error('Users sheet not found');
+
+  const rows = sheet.getDataRange().getValues();
+  const headers = rows[0] || [];
+  const eCol = headers.indexOf('Email');
+  const rCol = headers.indexOf('Role');
+  const nCol = headers.indexOf('Full Name');
+  const aCol = headers.indexOf('Active');
+
+  if (eCol === -1) throw new Error('Users sheet must have an \"Email\" column');
+  if (rCol === -1) throw new Error('Users sheet must have a \"Role\" column');
+  if (aCol === -1) throw new Error('Users sheet must have an \"Active\" column');
+
+  const target = String(email).toLowerCase().trim();
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (String(r[eCol]).toLowerCase().trim() === target &&
+        r[aCol] !== false && r[aCol] !== 'FALSE') {
+      const rawRole = String(r[rCol] || ROLES.USER).trim();
+      const normalizedRole = rawRole.toLowerCase();
+      return {
+        email: String(r[eCol]).trim(),
+        role: normalizedRole === 'admin' || normalizedRole === 'captain' || normalizedRole === 'user'
+          ? normalizedRole
+          : ROLES.USER,
+        fullName: nCol === -1 ? '' : String(r[nCol] || '').trim(),
+      };
+    }
+  }
+  return null;
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
