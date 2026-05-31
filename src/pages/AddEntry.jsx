@@ -109,7 +109,7 @@ export default function AddEntry() {
   const navigate = useNavigate();
   const location = useLocation();
   const { entries, config, saveEntry, nextViharNo, syncConfig, syncEntries } = useSheets();
-  const { session } = useAuth();
+  const { session, ensureWriteAccess } = useAuth();
 
   const editEntry = location.state?.entry || null;
 

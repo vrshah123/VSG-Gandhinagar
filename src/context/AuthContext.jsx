@@ -49,6 +49,7 @@ export function AuthProvider({ children }) {
   const [googleModalOpen, setGoogleModalOpen] = useState(false);
   const [googleModalError, setGoogleModalError] = useState('');
   const pendingAuthRef = useRef(null);
+  const gisInitializedRef = useRef(false);
 
   const canWrite = useMemo(() => PERMISSIONS.canAddEntry(session.role), [session.role]);
 
@@ -83,6 +84,30 @@ export function AuthProvider({ children }) {
     }
   }
 
+  function initGoogleIdentity_() {
+    if (gisInitializedRef.current) return true;
+
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (!clientId) return false;
+
+    const googleId = typeof window !== 'undefined' ? window.google?.accounts?.id : null;
+    if (!googleId) return false;
+
+    googleId.initialize({
+      client_id: clientId,
+      callback: (response) => {
+        if (response?.credential) handleGoogleCredential(response.credential);
+      },
+      // If the browser has an active Google session, this can often return an ID token without extra UI.
+      auto_select: true,
+      // Keep popup mode for explicit button sign-in fallback.
+      ux_mode: 'popup',
+    });
+
+    gisInitializedRef.current = true;
+    return true;
+  }
+
   function ensureWriteAccess() {
     if (canWrite && isTokenValid(session)) return Promise.resolve(session);
 
@@ -90,10 +115,36 @@ export function AuthProvider({ children }) {
     if (!clientId) return Promise.reject(new Error('Missing VITE_GOOGLE_CLIENT_ID'));
 
     setGoogleModalError('');
-    setGoogleModalOpen(true);
 
     return new Promise((resolve, reject) => {
       pendingAuthRef.current = { resolve, reject };
+
+      const googleId = typeof window !== 'undefined' ? window.google?.accounts?.id : null;
+      const inited = initGoogleIdentity_();
+
+      // Try One Tap first. If it can't show or user dismisses, fall back to the modal button.
+      if (googleId && inited && typeof googleId.prompt === 'function') {
+        try {
+          googleId.prompt((notification) => {
+            if (
+              notification?.isNotDisplayed?.() ||
+              notification?.isSkippedMoment?.() ||
+              notification?.isDismissedMoment?.()
+            ) {
+              setGoogleModalOpen(true);
+            }
+          });
+
+          // If nothing happens quickly (covers browsers that neither display nor callback), show the modal.
+          setTimeout(() => {
+            if (pendingAuthRef.current) setGoogleModalOpen(true);
+          }, 900);
+        } catch {
+          setGoogleModalOpen(true);
+        }
+      } else {
+        setGoogleModalOpen(true);
+      }
     });
   }
 
@@ -112,7 +163,7 @@ export function AuthProvider({ children }) {
         clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}
         error={googleModalError}
         onClose={cancelEnsureWriteAccess}
-        onCredential={handleGoogleCredential}
+        onInit={initGoogleIdentity_}
       />
     </AuthContext.Provider>
   );

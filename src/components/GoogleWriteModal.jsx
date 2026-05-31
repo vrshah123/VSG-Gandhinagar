@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { X } from 'lucide-react';
 
-export default function GoogleWriteModal({ open, clientId, error, onClose, onCredential }) {
+export default function GoogleWriteModal({ open, clientId, error, onClose, onInit }) {
   const buttonRef = useRef(null);
 
   const googleAvailable = useMemo(() => {
@@ -14,13 +14,7 @@ export default function GoogleWriteModal({ open, clientId, error, onClose, onCre
     if (!googleAvailable) return;
     if (!buttonRef.current) return;
 
-    window.google.accounts.id.initialize({
-      client_id: clientId,
-      callback: (response) => {
-        if (response?.credential) onCredential(response.credential);
-      },
-      ux_mode: 'popup',
-    });
+    if (typeof onInit === 'function') onInit();
 
     buttonRef.current.innerHTML = '';
     window.google.accounts.id.renderButton(buttonRef.current, {
@@ -30,7 +24,7 @@ export default function GoogleWriteModal({ open, clientId, error, onClose, onCre
       text: 'continue_with',
       shape: 'pill',
     });
-  }, [open, clientId, googleAvailable, onCredential]);
+  }, [open, clientId, googleAvailable, onInit]);
 
   if (!open) return null;
 
