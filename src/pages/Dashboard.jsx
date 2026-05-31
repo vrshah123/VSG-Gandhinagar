@@ -79,9 +79,9 @@ export default function Dashboard() {
             navigate('/add');
           }}
           className="flex items-center gap-1 bg-white text-[#C96800] font-bold text-sm px-3 py-2 rounded-xl flex-shrink-0"
-          title="Add Entry"
+          title="Add New Entry"
         >
-          <Plus size={16} /> Add
+          <Plus size={16} /> Add New Entry
         </button>
       </header>
 
