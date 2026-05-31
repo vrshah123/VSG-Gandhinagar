@@ -3,7 +3,7 @@ export const SHEET_ID = '1tvZ2SVEUYX8dzGg1wZXeTvMZURjxwntOKrECiWqLcEA';
 // ── PRODUCTION: paste your Apps Script Web App URL here ─────────────────────
 // Once this is set, the ⚙️ Settings icon in the app is not needed.
 // Leave empty string during local development and use Settings instead.
-export const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4m-B1hCg2zKKh_D88Yk_b2BnJklMdcY7hRqlmLt-RqrwD6Czn4Yt0tbiye1SxSzrGUg/execs';
+export const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby4m-B1hCg2zKKh_D88Yk_b2BnJklMdcY7hRqlmLt-RqrwD6Czn4Yt0tbiye1SxSzrGUg/exec';
 // e.g. export const SCRIPT_URL = 'https://script.google.com/macros/s/ABC.../exec';
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -57,7 +57,25 @@ export function AuthProvider({ children }) {
     const url = getScriptUrl();
     if (!url) return Promise.reject(new Error('No script URL configured'));
     const qs = new URLSearchParams(params).toString();
-    return fetch(`${url}?${qs}`).then(r => r.json());
+    return fetch(`${url}?${qs}`)
+      .then(async (r) => {
+        const text = await r.text();
+        if (!r.ok) {
+          throw new Error(`Server error (${r.status}). Check Apps Script Web App URL/deployment.`);
+        }
+        try {
+          return text ? JSON.parse(text) : null;
+        } catch {
+          throw new Error('Invalid server response. Check Apps Script Web App URL/deployment.');
+        }
+      })
+      .catch((err) => {
+        // CORS, network, or blocked third-party cookies often surface as "Failed to fetch".
+        if (String(err?.message || '').includes('Failed to fetch')) {
+          throw new Error('Failed to reach Apps Script (network/CORS). Check SCRIPT_URL and Web App deployment access.');
+        }
+        throw err;
+      });
   }
 
   async function handleGoogleCredential(idToken) {
