@@ -57,7 +57,9 @@ export function AuthProvider({ children }) {
     const url = getScriptUrl();
     if (!url) return Promise.reject(new Error('No script URL configured'));
     const qs = new URLSearchParams(params).toString();
-    return fetch(`${url}?${qs}`)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 25000);
+    return fetch(`${url}?${qs}`, { signal: controller.signal })
       .then(async (r) => {
         const text = await r.text();
         if (!r.ok) {
@@ -70,11 +72,17 @@ export function AuthProvider({ children }) {
         }
       })
       .catch((err) => {
+        if (err?.name === 'AbortError') {
+          throw new Error('Request timed out. Please try again.');
+        }
         // CORS, network, or blocked third-party cookies often surface as "Failed to fetch".
         if (String(err?.message || '').includes('Failed to fetch')) {
           throw new Error('Failed to reach Apps Script (network/CORS). Check SCRIPT_URL and Web App deployment access.');
         }
         throw err;
+      })
+      .finally(() => {
+        clearTimeout(timeout);
       });
   }, []);
 
