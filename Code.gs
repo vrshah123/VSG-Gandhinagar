@@ -44,6 +44,22 @@ const VIHAR_HEADERS = [
   'Saved At', 'Deleted', 'Saved By',
 ];
 
+// ── One-time authorization helper ────────────────────────────────────────────
+// If you see: "You do not have permission to call UrlFetchApp.fetch",
+// open Apps Script editor and run `authorize()` once (as the script owner),
+// then redeploy the Web App (New version).
+function authorize() {
+  // Touch spreadsheet scope
+  SpreadsheetApp.getActiveSpreadsheet();
+
+  // Touch external request scope (required for Google tokeninfo validation)
+  UrlFetchApp.fetch('https://oauth2.googleapis.com/tokeninfo?id_token=invalid', {
+    muteHttpExceptions: true,
+  });
+
+  return { ok: true };
+}
+
 // ── Entry point ─────────────────────────────────────────────────────────────
 
 function doGet(e) {
@@ -60,6 +76,7 @@ function doGet(e) {
     else if (action === 'googleLogin') result = googleLogin(e.parameter.idToken);
     else if (action === 'newYear')   result = newYear(e.parameter.year, e.parameter.idToken);
     else if (action === 'ping')      result = { ok: true, at: new Date().toISOString() };
+    else if (action === 'authorize') result = authorize();
     else                             result = { error: 'Unknown action: ' + action };
   } catch (err) {
     result = { error: err.message };
