@@ -87,19 +87,9 @@ function getAll() {
 
 function saveEntry(dataStr, idToken) {
   const actor = requireWriteAccess_(idToken);
-  const entry = JSON.parse(dataStr);
+  const entry = JSON.parse(dataStr || '{}');
   const lock = LockService.getScriptLock();
 
-  // Never trust client-supplied savedBy / savedAt
-  entry.savedBy = actor.email || '';
-  entry.savedAt = new Date().toISOString();
-
-  // Look for existing row by ID
-  const idCol = headers.indexOf('ID');
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][idCol] === entry.id) {
-      sheet.getRange(i + 1, 1, 1, headers.length).setValues([entryToRow(headers, entry)]);
-      return { success: true, action: 'updated' };
   // Prevent concurrent inserts generating the same Vihar No.
   lock.waitLock(30 * 1000);
   try {
@@ -107,8 +97,13 @@ function saveEntry(dataStr, idToken) {
     const rows = sheet.getDataRange().getValues();
     const headers = rows[0];
 
+    // Never trust client-supplied savedBy / savedAt
+    entry.savedBy = actor.email || '';
+    entry.savedAt = new Date().toISOString();
+
     const idCol = headers.indexOf('ID');
     const viharNoCol = headers.indexOf('Vihar No.');
+    if (idCol === -1) throw new Error('Vihar sheet missing "ID" column');
 
     // Update existing row by ID (keep original Vihar No.)
     for (let i = 1; i < rows.length; i++) {
