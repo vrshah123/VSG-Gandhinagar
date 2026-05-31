@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ChevronDown, Plus, RefreshCw, Search, X } from 'lucide-react';
 import { useSheets } from '../hooks/useSheets';
 import { useAuth } from '../context/AuthContext';
