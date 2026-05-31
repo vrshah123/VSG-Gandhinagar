@@ -346,9 +346,13 @@ function getUserByEmail_(email) {
     const r = rows[i];
     if (String(r[eCol]).toLowerCase().trim() === target &&
         r[aCol] !== false && r[aCol] !== 'FALSE') {
+      const rawRole = String(r[rCol] || ROLES.USER).trim();
+      const normalizedRole = rawRole.toLowerCase();
       return {
         email: String(r[eCol]).trim(),
-        role: String(r[rCol] || ROLES.USER).trim(),
+        role: normalizedRole === 'admin' || normalizedRole === 'captain' || normalizedRole === 'user'
+          ? normalizedRole
+          : ROLES.USER,
         fullName: nCol === -1 ? '' : String(r[nCol] || '').trim(),
       };
     }
