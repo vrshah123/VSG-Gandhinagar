@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useRef, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
 import { getScriptUrl, PERMISSIONS, ROLES } from '../config/sheets';
 import GoogleWriteModal from '../components/GoogleWriteModal';
 
@@ -53,7 +53,7 @@ export function AuthProvider({ children }) {
 
   const canWrite = useMemo(() => PERMISSIONS.canAddEntry(session.role), [session.role]);
 
-  function scriptApi(params) {
+  const scriptApi = useCallback((params) => {
     const url = getScriptUrl();
     if (!url) return Promise.reject(new Error('No script URL configured'));
     const qs = new URLSearchParams(params).toString();
@@ -76,9 +76,9 @@ export function AuthProvider({ children }) {
         }
         throw err;
       });
-  }
+  }, []);
 
-  async function handleGoogleCredential(idToken) {
+  const handleGoogleCredential = useCallback(async (idToken) => {
     setGoogleModalError('');
     try {
       const res = await scriptApi({ action: 'googleLogin', idToken });
@@ -100,9 +100,9 @@ export function AuthProvider({ children }) {
     } catch (err) {
       setGoogleModalError(err.message || 'Google auth failed');
     }
-  }
+  }, [scriptApi]);
 
-  function initGoogleIdentity_() {
+  const initGoogleIdentity_ = useCallback(() => {
     if (gisInitializedRef.current) return true;
 
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -124,9 +124,9 @@ export function AuthProvider({ children }) {
 
     gisInitializedRef.current = true;
     return true;
-  }
+  }, [handleGoogleCredential]);
 
-  function ensureWriteAccess() {
+  const ensureWriteAccess = useCallback(() => {
     if (canWrite && isTokenValid(session)) return Promise.resolve(session);
 
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -164,14 +164,14 @@ export function AuthProvider({ children }) {
         setGoogleModalOpen(true);
       }
     });
-  }
+  }, [canWrite, initGoogleIdentity_, session]);
 
-  function cancelEnsureWriteAccess() {
+  const cancelEnsureWriteAccess = useCallback(() => {
     const pending = pendingAuthRef.current;
     pendingAuthRef.current = null;
     setGoogleModalOpen(false);
     if (pending?.reject) pending.reject(new Error('Cancelled'));
-  }
+  }, []);
 
   return (
     <AuthContext.Provider value={{ session, role: session.role, fullName: session.fullName, ensureWriteAccess }}>
