@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { ChevronDown, Plus, RefreshCw, Search, X } from 'lucide-react';
 import { useSheets } from '../hooks/useSheets';
 import { useAuth } from '../context/AuthContext';
@@ -83,11 +83,6 @@ export default function Dashboard() {
         >
           <Plus size={16} /> Add
         </button>
-        {PERMISSIONS.canAddEntry(role) && (
-          <Link to="/add" className="flex items-center gap-1 bg-white text-[#C96800] font-bold text-sm px-2 py-2 rounded-xl flex-shrink-0">
-            Add New Report
-          </Link>
-        )}
       </header>
 
       <div className="scroll-area px-4 pt-4 space-y-4">
